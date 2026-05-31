@@ -151,6 +151,8 @@ export interface Goals {
   goalWeightKg: number | null;
   /** Daily caffeine limit in mg. */
   caffeineLimit: number;
+  /** Optional manual resting burn (RMR, kcal/day); null = auto from profile. */
+  restingBurn: number | null;
   theme: ThemeMode;
   /** Accent color hex. */
   accent: string;

@@ -20,6 +20,7 @@ import {
   type DaySummary,
 } from '@/db/meals';
 import { getExerciseTotal } from '@/db/exercise';
+import { getLatestWeight } from '@/db/weights';
 import { adjustWater, getWater } from '@/db/water';
 import { addCaffeine, clearCaffeine, getCaffeine } from '@/db/caffeine';
 import { getCheckIn } from '@/db/checkins';
@@ -33,7 +34,7 @@ import {
   toDayKey,
 } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
-import { effectiveCalorieGoal } from '@/health';
+import { effectiveCalorieGoal, effectiveRestingBurn } from '@/health';
 import { ProgressRing } from '@/components/ProgressRing';
 import { MacroBars } from '@/components/MacroBars';
 import { WaterCard } from '@/components/WaterCard';
@@ -76,10 +77,11 @@ export default function TodayScreen() {
   const [streak, setStreak] = useState(0);
   const [checkin, setCheckin] = useState<CheckIn | null>(null);
   const [categories, setCategories] = useState<MealCategory[]>([]);
+  const [weightKg, setWeightKg] = useState<number | null>(null);
   const [celebrate, setCelebrate] = useState(false);
 
   const load = useCallback(async () => {
-    const [dayMeals, daySummary, glasses, mg, burned, loggedDays, ci, cats] =
+    const [dayMeals, daySummary, glasses, mg, burned, loggedDays, ci, cats, w] =
       await Promise.all([
         getMealsForDay(day),
         getDaySummary(day),
@@ -89,6 +91,7 @@ export default function TodayScreen() {
         getLoggedDays(60),
         getCheckIn(day),
         getCategories(),
+        getLatestWeight(),
       ]);
     setMeals(dayMeals);
     setSummary(daySummary);
@@ -98,6 +101,7 @@ export default function TodayScreen() {
     setStreak(streakFromDays(loggedDays));
     setCheckin(ci);
     setCategories(cats);
+    setWeightKg(w?.kg ?? null);
   }, [day]);
 
   useFocusEffect(
@@ -177,8 +181,9 @@ export default function TodayScreen() {
   );
 
   const dayCalorieGoal = effectiveCalorieGoal(goals, day);
-  const calLeft = dayCalorieGoal + exercise - summary.calories;
+  const calLeft = dayCalorieGoal - summary.calories;
   const proteinLeft = goals.proteinGoal - summary.protein;
+  const restingBurn = effectiveRestingBurn(goals, weightKg);
   const showSuggestion = isToday(day) && summary.count > 0 && (calLeft > 50 || proteinLeft > 5);
 
   const knownKeys = new Set(categories.map((c) => c.key));
@@ -232,13 +237,17 @@ export default function TodayScreen() {
               </Pressable>
             ) : null}
 
-            <DayOverview
-              summary={summary}
-              exercise={exercise}
-              goals={goals}
-              calorieGoal={dayCalorieGoal}
-              onAddExercise={() => router.push(`/add-exercise?day=${day}`)}
-            />
+            <DayOverview summary={summary} goals={goals} calorieGoal={dayCalorieGoal} />
+
+            <View style={styles.cardGap}>
+              <EnergyBalanceCard
+                eaten={summary.calories}
+                exercise={exercise}
+                restingBurn={restingBurn}
+                onAddExercise={() => router.push(`/add-exercise?day=${day}`)}
+                onSetResting={() => router.push('/settings')}
+              />
+            </View>
 
             {streak > 1 ? (
               <View style={styles.insight}>
@@ -397,20 +406,17 @@ function DateBar({
 
 function DayOverview({
   summary,
-  exercise,
   goals,
   calorieGoal,
-  onAddExercise,
 }: {
   summary: DaySummary;
-  exercise: number;
   goals: ReturnType<typeof useGoals>['goals'];
   calorieGoal: number;
-  onAddExercise: () => void;
 }) {
-  const budget = calorieGoal + exercise;
-  const remaining = budget - summary.calories;
-  const progress = budget > 0 ? summary.calories / budget : 0;
+  // The ring tracks intake against the goal only; exercise is handled
+  // separately in the energy-balance card so it can't inflate the goal.
+  const remaining = calorieGoal - summary.calories;
+  const progress = calorieGoal > 0 ? summary.calories / calorieGoal : 0;
   const over = remaining < 0;
 
   return (
@@ -419,21 +425,9 @@ function DayOverview({
         <Text style={styles.ringValue}>{Math.abs(remaining).toLocaleString()}</Text>
         <Text style={styles.ringLabel}>{over ? 'kcal over' : 'kcal left'}</Text>
         <Text style={styles.ringSub}>
-          {summary.calories.toLocaleString()} / {budget.toLocaleString()}
+          {summary.calories.toLocaleString()} / {calorieGoal.toLocaleString()} eaten
         </Text>
       </ProgressRing>
-
-      <Pressable onPress={onAddExercise} style={styles.budgetLine} hitSlop={6}>
-        <Text style={styles.budgetText}>
-          Goal {calorieGoal.toLocaleString()}
-        </Text>
-        <View style={styles.exerciseChip}>
-          <Ionicons name="barbell-outline" size={13} color={colors.accent} />
-          <Text style={styles.exerciseText}>
-            {exercise > 0 ? `+${exercise.toLocaleString()} exercise` : 'Add exercise'}
-          </Text>
-        </View>
-      </Pressable>
 
       <View style={styles.macrosWrap}>
         <MacroBars
@@ -446,6 +440,80 @@ function DayOverview({
         />
       </View>
     </Card>
+  );
+}
+
+/** Energy balance: eaten vs burned (resting + exercise) → deficit/surplus. */
+function EnergyBalanceCard({
+  eaten,
+  exercise,
+  restingBurn,
+  onAddExercise,
+  onSetResting,
+}: {
+  eaten: number;
+  exercise: number;
+  restingBurn: number | null;
+  onAddExercise: () => void;
+  onSetResting: () => void;
+}) {
+  const burned = (restingBurn ?? 0) + exercise;
+  const net = eaten - burned; // negative = deficit
+  const deficit = net < 0;
+  const hasBurn = restingBurn != null || exercise > 0;
+
+  return (
+    <Card style={styles.balanceCard}>
+      <View style={styles.balanceRow}>
+        <BalanceCell label="Eaten" value={eaten} color={colors.text} />
+        <Ionicons name="remove" size={16} color={colors.textMuted} />
+        <Pressable onPress={onAddExercise} style={styles.balanceCellPress}>
+          <BalanceCell
+            label={restingBurn != null ? 'Burned' : 'Exercise'}
+            value={burned}
+            color={colors.text}
+          />
+        </Pressable>
+      </View>
+
+      {hasBurn ? (
+        <View style={[styles.netPill, { backgroundColor: deficit ? colors.accentDim : '#3A2A14' }]}>
+          <Ionicons
+            name={deficit ? 'trending-down' : 'trending-up'}
+            size={16}
+            color={deficit ? colors.accent : colors.warning}
+          />
+          <Text style={[styles.netText, { color: deficit ? colors.accent : colors.warning }]}>
+            {Math.abs(net).toLocaleString()} kcal {deficit ? 'deficit' : 'surplus'} today
+          </Text>
+        </View>
+      ) : null}
+
+      <View style={styles.balanceMetaRow}>
+        <Pressable onPress={onSetResting} hitSlop={6}>
+          <Text style={styles.balanceMeta}>
+            {restingBurn != null
+              ? `Resting burn ${restingBurn.toLocaleString()} kcal · tap to adjust`
+              : 'Add your resting burn for true deficit ›'}
+          </Text>
+        </Pressable>
+        <Pressable onPress={onAddExercise} hitSlop={6} style={styles.exerciseChip}>
+          <Ionicons name="barbell-outline" size={13} color={colors.accent} />
+          <Text style={styles.exerciseText}>
+            {exercise > 0 ? `${exercise.toLocaleString()} burned` : 'Add exercise'}
+          </Text>
+        </Pressable>
+      </View>
+    </Card>
+  );
+}
+
+function BalanceCell({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <View style={styles.balanceCell}>
+      <Text style={[styles.balanceValue, { color }]}>{value.toLocaleString()}</Text>
+      <Text style={styles.balanceLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -585,6 +653,23 @@ const styles = StyleSheet.create({
   },
   exerciseText: { color: colors.accent, fontSize: font.size.xs, fontWeight: font.weight.medium },
   macrosWrap: { alignSelf: 'stretch' },
+  balanceCard: { gap: spacing.md },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
+  balanceCellPress: { borderRadius: radius.md },
+  balanceCell: { alignItems: 'center' },
+  balanceValue: { fontSize: font.size.lg, fontWeight: font.weight.bold },
+  balanceLabel: { color: colors.textMuted, fontSize: font.size.xs, marginTop: 2 },
+  netPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.sm,
+  },
+  netText: { fontSize: font.size.md, fontWeight: font.weight.bold },
+  balanceMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  balanceMeta: { color: colors.textMuted, fontSize: font.size.xs, flexShrink: 1 },
   insight: {
     flexDirection: 'row',
     alignItems: 'center',

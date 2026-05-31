@@ -187,6 +187,10 @@ const MIGRATIONS: string[] = [
       ('dinner', 'Dinner', 'moon-outline', 2),
       ('snack', 'Snacks', 'cafe-outline', 3);
   `,
+  // 7 -> 8: optional resting burn rate (RMR) for energy-balance tracking.
+  `
+    ALTER TABLE settings ADD COLUMN resting_burn INTEGER;
+  `,
 ];
 
 /**

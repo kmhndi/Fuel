@@ -16,6 +16,7 @@ interface SettingsRow {
   activity: number;
   goal_weight_kg: number | null;
   caffeine_limit: number;
+  resting_burn: number | null;
   theme: ThemeMode;
   accent: string;
   water_reminders: number;
@@ -37,6 +38,7 @@ const DEFAULTS: Goals = {
   activity: 1.2,
   goalWeightKg: null,
   caffeineLimit: 400,
+  restingBurn: null,
   theme: 'dark',
   accent: '#22D3A7',
   waterReminders: false,
@@ -75,6 +77,7 @@ export async function getGoals(): Promise<Goals> {
     activity: row.activity,
     goalWeightKg: row.goal_weight_kg,
     caffeineLimit: row.caffeine_limit,
+    restingBurn: row.resting_burn,
     theme: row.theme,
     accent: row.accent,
     waterReminders: row.water_reminders === 1,
@@ -98,8 +101,8 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     `INSERT INTO settings
        (id, calorie_goal, protein_goal, carb_goal, fat_goal, water_goal,
         glass_ml, weight_unit, sex, age, height_cm, activity, goal_weight_kg,
-        caffeine_limit, theme, accent, water_reminders, weekday_goals, onboarded)
-     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        caffeine_limit, resting_burn, theme, accent, water_reminders, weekday_goals, onboarded)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
      ON CONFLICT(id) DO UPDATE SET
        calorie_goal = excluded.calorie_goal,
        protein_goal = excluded.protein_goal,
@@ -114,6 +117,7 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
        activity = excluded.activity,
        goal_weight_kg = excluded.goal_weight_kg,
        caffeine_limit = excluded.caffeine_limit,
+       resting_burn = excluded.resting_burn,
        theme = excluded.theme,
        accent = excluded.accent,
        water_reminders = excluded.water_reminders,
@@ -132,6 +136,7 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     next.activity,
     next.goalWeightKg,
     Math.max(0, Math.round(next.caffeineLimit)),
+    next.restingBurn != null ? Math.max(0, Math.round(next.restingBurn)) : null,
     next.theme,
     next.accent,
     next.waterReminders ? 1 : 0,

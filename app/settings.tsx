@@ -48,6 +48,7 @@ export default function SettingsScreen() {
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
   const [goalWeight, setGoalWeight] = useState('');
   const [caffeineLimit, setCaffeineLimit] = useState('');
+  const [restingBurn, setRestingBurn] = useState('');
   const [waterReminders, setWaterReminders] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [accent, setAccent] = useState<string>(ACCENT_CHOICES[0]);
@@ -67,6 +68,7 @@ export default function SettingsScreen() {
       setWeightUnit(g.weightUnit);
       setGoalWeight(g.goalWeightKg != null ? kgToDisplay(g.goalWeightKg, g.weightUnit).toFixed(1) : '');
       setCaffeineLimit(String(g.caffeineLimit));
+      setRestingBurn(g.restingBurn != null ? String(g.restingBurn) : '');
       setWaterReminders(g.waterReminders);
       setTheme(g.theme);
       setAccent(g.accent);
@@ -111,6 +113,7 @@ export default function SettingsScreen() {
       weightUnit,
       goalWeightKg: Number.isFinite(gw) && gw > 0 ? displayToKg(gw, weightUnit) : null,
       caffeineLimit: Math.max(0, int(caffeineLimit)),
+      restingBurn: restingBurn.trim() ? Math.max(0, int(restingBurn)) : null,
       theme,
       accent,
     });
@@ -306,6 +309,22 @@ export default function SettingsScreen() {
           <View style={styles.cell}>
             <Field label="Caffeine limit" value={caffeineLimit} onChangeText={(t) => setCaffeineLimit(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="mg" />
           </View>
+        </Card>
+
+        <Text style={styles.sectionTitle}>Energy balance</Text>
+        <Card style={styles.card}>
+          <Field
+            label="Resting burn (RMR)"
+            value={restingBurn}
+            onChangeText={(t) => setRestingBurn(t.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            suffix="kcal/day"
+            placeholder="Auto from profile"
+          />
+          <Text style={styles.privacy}>
+            Used with exercise to show your daily deficit or surplus (eaten −
+            burned). Leave blank to estimate it from your goal-calculator profile.
+          </Text>
         </Card>
 
         <Text style={styles.sectionTitle}>Notifications</Text>

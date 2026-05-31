@@ -35,6 +35,19 @@ export function formatWeight(kg: number, unit: WeightUnit): string {
   return `${kgToDisplay(kg, unit).toFixed(1)} ${unit}`;
 }
 
+/**
+ * The resting burn (RMR, kcal/day) to use for energy balance: the user's
+ * manual value if set, otherwise an estimate from their BMR (needs profile +
+ * a logged weight). Returns null when nothing is available.
+ */
+export function effectiveRestingBurn(
+  goals: Goals,
+  weightKg: number | null,
+): number | null {
+  if (goals.restingBurn != null && goals.restingBurn > 0) return goals.restingBurn;
+  return bmr(goals.sex, goals.age, goals.heightCm, weightKg);
+}
+
 export interface ActivityLevel {
   value: number;
   label: string;

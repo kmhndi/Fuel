@@ -32,6 +32,7 @@ const FALLBACK: Goals = {
   activity: 1.2,
   goalWeightKg: null,
   caffeineLimit: 400,
+  restingBurn: null,
   theme: 'dark',
   accent: '#22D3A7',
   waterReminders: false,
