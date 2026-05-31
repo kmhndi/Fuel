@@ -16,11 +16,12 @@ import {
   toggleFavorite as toggleFoodFavorite,
 } from '@/db/foods';
 import { getPresets } from '@/db/presets';
+import { getCategories } from '@/db/categories';
 import { Field, PrimaryButton, SegmentedControl } from '@/components/ui';
-import { caloriesFromMacros, mealTypeForNow, mealTypeMeta } from '@/nutrition';
+import { caloriesFromMacros, mealTypeForNow } from '@/nutrition';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
-import { MEAL_TYPES, type Food, type MealType, type Preset } from '@/types';
+import type { Food, MealCategory, MealType, Preset } from '@/types';
 
 const TAG_PRESETS = ['Homemade', 'Eating out', 'Takeout', 'Cheat', 'Meal prep'];
 
@@ -45,11 +46,16 @@ export default function AddMealScreen() {
   const [caloriesEdited, setCaloriesEdited] = useState(false);
   const [suggestions, setSuggestions] = useState<Food[]>([]);
   const [presets, setPresets] = useState<Preset[]>([]);
+  const [categories, setCategories] = useState<MealCategory[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isEditing && !isQuick) getPresets().then(setPresets);
   }, [isEditing, isQuick]);
+
+  useEffect(() => {
+    getCategories().then(setCategories);
+  }, []);
 
   // Load the meal being edited, or fall back to the add title.
   useEffect(() => {
@@ -165,14 +171,13 @@ export default function AddMealScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <SegmentedControl<MealType>
-          value={mealType}
-          onChange={setMealType}
-          options={MEAL_TYPES.map((t) => ({
-            value: t,
-            label: mealTypeMeta[t].label,
-          }))}
-        />
+        {categories.length > 0 ? (
+          <SegmentedControl<MealType>
+            value={mealType}
+            onChange={setMealType}
+            options={categories.map((c) => ({ value: c.key, label: c.name }))}
+          />
+        ) : null}
 
         {!isEditing && !isQuick && presets.length > 0 && !name.trim() ? (
           <View style={styles.presetRow}>

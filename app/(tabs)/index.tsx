@@ -23,6 +23,7 @@ import { getExerciseTotal } from '@/db/exercise';
 import { adjustWater, getWater } from '@/db/water';
 import { addCaffeine, clearCaffeine, getCaffeine } from '@/db/caffeine';
 import { getCheckIn } from '@/db/checkins';
+import { getCategories } from '@/db/categories';
 import {
   formatDayLabel,
   isFuture,
@@ -39,17 +40,16 @@ import { WaterCard } from '@/components/WaterCard';
 import { CaffeineCard } from '@/components/CaffeineCard';
 import { Celebration } from '@/components/Celebration';
 import { Card, EmptyState } from '@/components/ui';
-import { mealTypeMeta } from '@/nutrition';
 import { successFeedback, tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
-import { MEAL_TYPES, type CheckIn, type Meal, type MealType } from '@/types';
+import type { CheckIn, Meal, MealCategory } from '@/types';
 
 const MOOD_EMOJI = ['😟', '🙁', '😐', '🙂', '😄'];
 
 interface Section {
-  type: MealType;
+  type: string;
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   calories: number;
   data: Meal[];
 }
@@ -75,10 +75,11 @@ export default function TodayScreen() {
   const [exercise, setExercise] = useState(0);
   const [streak, setStreak] = useState(0);
   const [checkin, setCheckin] = useState<CheckIn | null>(null);
+  const [categories, setCategories] = useState<MealCategory[]>([]);
   const [celebrate, setCelebrate] = useState(false);
 
   const load = useCallback(async () => {
-    const [dayMeals, daySummary, glasses, mg, burned, loggedDays, ci] =
+    const [dayMeals, daySummary, glasses, mg, burned, loggedDays, ci, cats] =
       await Promise.all([
         getMealsForDay(day),
         getDaySummary(day),
@@ -87,6 +88,7 @@ export default function TodayScreen() {
         getExerciseTotal(day),
         getLoggedDays(60),
         getCheckIn(day),
+        getCategories(),
       ]);
     setMeals(dayMeals);
     setSummary(daySummary);
@@ -95,6 +97,7 @@ export default function TodayScreen() {
     setExercise(burned);
     setStreak(streakFromDays(loggedDays));
     setCheckin(ci);
+    setCategories(cats);
   }, [day]);
 
   useFocusEffect(
@@ -178,16 +181,29 @@ export default function TodayScreen() {
   const proteinLeft = goals.proteinGoal - summary.protein;
   const showSuggestion = isToday(day) && summary.count > 0 && (calLeft > 50 || proteinLeft > 5);
 
-  const sections: Section[] = MEAL_TYPES.map((type) => {
-    const data = meals.filter((m) => m.mealType === type);
+  const knownKeys = new Set(categories.map((c) => c.key));
+  const sections: Section[] = categories.map((cat) => {
+    const data = meals.filter((m) => m.mealType === cat.key);
     return {
-      type,
-      title: mealTypeMeta[type].label,
-      icon: mealTypeMeta[type].icon,
+      type: cat.key,
+      title: cat.name,
+      icon: cat.icon,
       calories: data.reduce((sum, m) => sum + m.calories, 0),
       data,
     };
-  }).filter((s) => s.data.length > 0);
+  });
+  // Catch meals whose category was deleted so nothing silently disappears.
+  const orphans = meals.filter((m) => !knownKeys.has(m.mealType));
+  if (orphans.length > 0) {
+    sections.push({
+      type: '__other__',
+      title: 'Other',
+      icon: 'ellipsis-horizontal',
+      calories: orphans.reduce((sum, m) => sum + m.calories, 0),
+      data: orphans,
+    });
+  }
+  const visibleSections = sections.filter((s) => s.data.length > 0);
 
   return (
     <View style={styles.container}>
@@ -199,7 +215,7 @@ export default function TodayScreen() {
       />
 
       <SectionList
-        sections={sections}
+        sections={visibleSections}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
         stickySectionHeadersEnabled={false}
@@ -298,7 +314,11 @@ export default function TodayScreen() {
         }
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
-            <Ionicons name={section.icon} size={16} color={colors.textMuted} />
+            <Ionicons
+              name={section.icon as keyof typeof Ionicons.glyphMap}
+              size={16}
+              color={colors.textMuted}
+            />
             <Text style={styles.sectionTitle}>{section.title}</Text>
             <Text style={styles.sectionCalories}>
               {section.calories.toLocaleString()} kcal

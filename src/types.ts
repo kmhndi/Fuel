@@ -1,13 +1,21 @@
 /** Shared domain types for Fuel. */
 
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+/** A meal category key. The original four ship by default, but users can add
+ *  their own, so this is a free string rather than a closed union. */
+export type MealType = string;
 
-export const MEAL_TYPES: MealType[] = [
-  'breakfast',
-  'lunch',
-  'dinner',
-  'snack',
-];
+/** The default categories, used as fallbacks and for time-of-day guessing. */
+export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+
+/** A customizable meal category. */
+export interface MealCategory {
+  id: number;
+  key: string;
+  name: string;
+  /** Ionicons glyph name. */
+  icon: string;
+  sort: number;
+}
 
 /** Macronutrient grams. */
 export interface Macros {

@@ -31,9 +31,9 @@ import {
 } from '@/components/ui';
 import { caloriesFromMacros, macroColors } from '@/nutrition';
 import { displayToKg, kgToDisplay } from '@/health';
-import { successFeedback } from '@/haptics';
-import { colors, font, radius, spacing } from '@/theme';
-import type { WeightUnit } from '@/types';
+import { selectionFeedback, successFeedback } from '@/haptics';
+import { ACCENT_CHOICES, colors, font, radius, spacing } from '@/theme';
+import type { ThemeMode, WeightUnit } from '@/types';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -49,6 +49,9 @@ export default function SettingsScreen() {
   const [goalWeight, setGoalWeight] = useState('');
   const [caffeineLimit, setCaffeineLimit] = useState('');
   const [waterReminders, setWaterReminders] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>('dark');
+  const [accent, setAccent] = useState<string>(ACCENT_CHOICES[0]);
+  const [appearanceChanged, setAppearanceChanged] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notifGranted, setNotifGranted] = useState(true);
@@ -65,6 +68,8 @@ export default function SettingsScreen() {
       setGoalWeight(g.goalWeightKg != null ? kgToDisplay(g.goalWeightKg, g.weightUnit).toFixed(1) : '');
       setCaffeineLimit(String(g.caffeineLimit));
       setWaterReminders(g.waterReminders);
+      setTheme(g.theme);
+      setAccent(g.accent);
     });
   }, []);
 
@@ -106,10 +111,15 @@ export default function SettingsScreen() {
       weightUnit,
       goalWeightKg: Number.isFinite(gw) && gw > 0 ? displayToKg(gw, weightUnit) : null,
       caffeineLimit: Math.max(0, int(caffeineLimit)),
+      theme,
+      accent,
     });
     await refresh();
     successFeedback();
     setSaving(false);
+    if (appearanceChanged) {
+      Alert.alert('Saved', 'Reopen Fuel to see the new look applied everywhere.');
+    }
     router.back();
   };
 
@@ -249,6 +259,45 @@ export default function SettingsScreen() {
           />
         </Card>
 
+        <Text style={styles.sectionTitle}>Appearance</Text>
+        <Card style={styles.card}>
+          <Text style={styles.unitLabel}>Theme</Text>
+          <SegmentedControl<ThemeMode>
+            value={theme}
+            onChange={(t) => {
+              setTheme(t);
+              setAppearanceChanged(true);
+            }}
+            options={[
+              { value: 'dark', label: 'Dark' },
+              { value: 'light', label: 'Light' },
+            ]}
+          />
+          <Text style={styles.unitLabel}>Accent</Text>
+          <View style={styles.swatches}>
+            {ACCENT_CHOICES.map((c) => (
+              <Pressable
+                key={c}
+                onPress={() => {
+                  selectionFeedback();
+                  setAccent(c);
+                  setAppearanceChanged(true);
+                }}
+                style={[
+                  styles.swatch,
+                  { backgroundColor: c },
+                  accent === c && styles.swatchActive,
+                ]}
+              >
+                {accent === c ? <Ionicons name="checkmark" size={18} color="#000" /> : null}
+              </Pressable>
+            ))}
+          </View>
+          {appearanceChanged ? (
+            <Text style={styles.hint}>Reopen Fuel to apply the new look.</Text>
+          ) : null}
+        </Card>
+
         <Text style={styles.sectionTitle}>Targets</Text>
         <Card style={styles.row}>
           <View style={styles.cell}>
@@ -337,6 +386,17 @@ const styles = StyleSheet.create({
     fontWeight: font.weight.medium,
     marginBottom: spacing.sm,
   },
+  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  swatch: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  swatchActive: { borderColor: colors.text },
   notifCard: { gap: spacing.sm },
   notifRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   notifText: { color: colors.text, fontSize: font.size.md, flex: 1 },

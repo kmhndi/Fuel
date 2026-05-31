@@ -67,7 +67,11 @@ export default function MealSearchScreen() {
             onPress={() => router.push(`/add-meal?id=${item.id}`)}
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
           >
-            <Ionicons name={mealTypeMeta[item.mealType].icon} size={18} color={colors.textMuted} />
+            <Ionicons
+              name={mealTypeMeta[item.mealType]?.icon ?? 'restaurant-outline'}
+              size={18}
+              color={colors.textMuted}
+            />
             <View style={styles.info}>
               <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
               <Text style={styles.meta}>

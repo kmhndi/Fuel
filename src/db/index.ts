@@ -172,6 +172,21 @@ const MIGRATIONS: string[] = [
     ALTER TABLE supplements ADD COLUMN minute2 INTEGER;
     ALTER TABLE supplements ADD COLUMN notification_ids TEXT;
   `,
+  // 6 -> 7: customizable meal categories, seeded with the original four.
+  `
+    CREATE TABLE IF NOT EXISTS meal_categories (
+      id INTEGER PRIMARY KEY NOT NULL,
+      key TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      icon TEXT NOT NULL,
+      sort INTEGER NOT NULL
+    );
+    INSERT OR IGNORE INTO meal_categories (key, name, icon, sort) VALUES
+      ('breakfast', 'Breakfast', 'sunny-outline', 0),
+      ('lunch', 'Lunch', 'partly-sunny-outline', 1),
+      ('dinner', 'Dinner', 'moon-outline', 2),
+      ('snack', 'Snacks', 'cafe-outline', 3);
+  `,
 ];
 
 /**

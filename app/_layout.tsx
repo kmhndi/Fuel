@@ -9,7 +9,7 @@ import {
   requestNotificationPermission,
 } from '@/notifications';
 import { GoalsProvider } from '@/state/GoalsContext';
-import { colors } from '@/theme';
+import { colors, themeMode } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -37,7 +37,7 @@ export default function RootLayout() {
 
   return (
     <GoalsProvider>
-      <StatusBar style="light" />
+      <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
@@ -69,6 +69,7 @@ export default function RootLayout() {
         <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
         <Stack.Screen name="achievements" options={{ title: 'Achievements' }} />
         <Stack.Screen name="presets" options={{ title: 'Quick-add presets' }} />
+        <Stack.Screen name="categories" options={{ title: 'Meal categories' }} />
         <Stack.Screen name="weekday-goals" options={{ title: 'Per-day goals' }} />
         <Stack.Screen
           name="checkin"

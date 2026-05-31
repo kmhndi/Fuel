@@ -20,6 +20,7 @@ const ITEMS: Item[] = [
   { icon: 'trophy-outline', title: 'Achievements', subtitle: 'Badges and milestones', href: '/achievements' },
   { icon: 'share-social-outline', title: 'Share today', subtitle: 'A shareable summary image', href: '/share-day' },
   { icon: 'flash-outline', title: 'Quick-add presets', subtitle: 'Your one-tap foods', href: '/presets' },
+  { icon: 'pricetags-outline', title: 'Meal categories', subtitle: 'Customize your meal types', href: '/categories' },
   { icon: 'calculator-outline', title: 'Goal calculator', subtitle: 'Estimate your calorie target (TDEE)', href: '/goal-calculator' },
   { icon: 'options-outline', title: 'Goals & settings', subtitle: 'Targets, units, water, backup', href: '/settings' },
 ];
