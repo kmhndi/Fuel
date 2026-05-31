@@ -11,7 +11,14 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.khalidalmohannadi.fuel",
       "infoPlist": {
+<<<<<<< Updated upstream
         "UIBackgroundModes": ["remote-notification"],
+=======
+        "UIBackgroundModes": [
+          "remote-notification",
+          "remote-notification"
+        ],
+>>>>>>> Stashed changes
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -37,6 +44,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "34cbca4c-405a-4d53-8bbd-4ecd09f08891"
+      }
     }
   }
 }
