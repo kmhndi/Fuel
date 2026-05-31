@@ -249,6 +249,21 @@ export async function searchMeals(query: string, limit = 100): Promise<Meal[]> {
   return rows.map(mapRow);
 }
 
+/** Map of day -> total calories for a given month (`YYYY-MM`). */
+export async function getMonthCalories(
+  yearMonth: string,
+): Promise<Record<string, number>> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{ day: string; calories: number }>(
+    `SELECT day, SUM(calories) AS calories FROM meals
+      WHERE day LIKE ? GROUP BY day`,
+    `${yearMonth}-%`,
+  );
+  const map: Record<string, number> = {};
+  for (const r of rows) map[r.day] = r.calories;
+  return map;
+}
+
 /** Distinct tags that have been used, most-used first. */
 export async function getUsedTags(): Promise<string[]> {
   const db = getDb();

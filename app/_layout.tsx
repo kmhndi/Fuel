@@ -66,6 +66,13 @@ export default function RootLayout() {
         <Stack.Screen name="weight" options={{ title: 'Weight & body' }} />
         <Stack.Screen name="food-library" options={{ title: 'Food library' }} />
         <Stack.Screen name="meal-search" options={{ title: 'Search meals' }} />
+        <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
+        <Stack.Screen name="achievements" options={{ title: 'Achievements' }} />
+        <Stack.Screen name="presets" options={{ title: 'Quick-add presets' }} />
+        <Stack.Screen
+          name="checkin"
+          options={{ presentation: 'modal', title: 'Daily check-in' }}
+        />
         <Stack.Screen
           name="goal-calculator"
           options={{ presentation: 'modal', title: 'Goal calculator' }}

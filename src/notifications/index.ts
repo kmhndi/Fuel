@@ -84,6 +84,47 @@ export async function scheduleDailyReminder(
   });
 }
 
+/** Hours at which water reminders fire when enabled. */
+const WATER_HOURS = [10, 12, 14, 16, 18, 20];
+
+/** Remove any previously scheduled water reminders (tagged via data.type). */
+export async function cancelWaterReminders(): Promise<void> {
+  try {
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(
+      all
+        .filter((n) => (n.content.data as { type?: string })?.type === 'water')
+        .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+    );
+  } catch {
+    // Scheduler unavailable (e.g. web) — nothing to cancel.
+  }
+}
+
+/**
+ * Enable or disable spread-out daily water reminders. When enabling, clears any
+ * existing ones first so toggling doesn't stack duplicates.
+ */
+export async function applyWaterReminders(enabled: boolean): Promise<void> {
+  await cancelWaterReminders();
+  if (!enabled) return;
+  for (const hour of WATER_HOURS) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '💧 Hydration check',
+        body: 'Time for some water.',
+        data: { type: 'water' },
+        ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour,
+        minute: 0,
+      },
+    }).catch(() => {});
+  }
+}
+
 /** Cancel every scheduled reminder (used when wiping all data). */
 export async function cancelAllReminders(): Promise<void> {
   try {

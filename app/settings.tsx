@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -15,6 +16,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getGoals, saveGoals, clearAllData } from '@/db/settings';
 import {
+  applyWaterReminders,
   getPermissionGranted,
   requestNotificationPermission,
 } from '@/notifications';
@@ -46,6 +48,7 @@ export default function SettingsScreen() {
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
   const [goalWeight, setGoalWeight] = useState('');
   const [caffeineLimit, setCaffeineLimit] = useState('');
+  const [waterReminders, setWaterReminders] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notifGranted, setNotifGranted] = useState(true);
@@ -61,8 +64,16 @@ export default function SettingsScreen() {
       setWeightUnit(g.weightUnit);
       setGoalWeight(g.goalWeightKg != null ? kgToDisplay(g.goalWeightKg, g.weightUnit).toFixed(1) : '');
       setCaffeineLimit(String(g.caffeineLimit));
+      setWaterReminders(g.waterReminders);
     });
   }, []);
+
+  const toggleWaterReminders = async (value: boolean) => {
+    setWaterReminders(value);
+    await saveGoals({ waterReminders: value });
+    await applyWaterReminders(value);
+    await refresh();
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -256,6 +267,18 @@ export default function SettingsScreen() {
             </Text>
           </View>
           {!notifGranted ? <GhostButton label="Enable reminders" onPress={enableNotifications} /> : null}
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.switchTitle}>Water reminders</Text>
+              <Text style={styles.switchSub}>Nudges through the day (10am–8pm)</Text>
+            </View>
+            <Switch
+              value={waterReminders}
+              onValueChange={toggleWaterReminders}
+              trackColor={{ false: colors.surfaceAlt, true: colors.accentDim }}
+              thumbColor={waterReminders ? colors.accent : colors.textMuted}
+            />
+          </View>
         </Card>
 
         <Text style={styles.sectionTitle}>Backup</Text>
@@ -316,6 +339,9 @@ const styles = StyleSheet.create({
   notifCard: { gap: spacing.sm },
   notifRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   notifText: { color: colors.text, fontSize: font.size.md, flex: 1 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  switchTitle: { color: colors.text, fontSize: font.size.md, fontWeight: font.weight.medium },
+  switchSub: { color: colors.textMuted, fontSize: font.size.xs, marginTop: 2 },
   privacy: { color: colors.textMuted, fontSize: font.size.sm, lineHeight: 20 },
   about: {
     color: colors.textMuted,

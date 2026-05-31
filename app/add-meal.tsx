@@ -15,11 +15,12 @@ import {
   getFoodSuggestions,
   toggleFavorite as toggleFoodFavorite,
 } from '@/db/foods';
+import { getPresets } from '@/db/presets';
 import { Field, PrimaryButton, SegmentedControl } from '@/components/ui';
 import { caloriesFromMacros, mealTypeForNow, mealTypeMeta } from '@/nutrition';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
-import { MEAL_TYPES, type Food, type MealType } from '@/types';
+import { MEAL_TYPES, type Food, type MealType, type Preset } from '@/types';
 
 const TAG_PRESETS = ['Homemade', 'Eating out', 'Takeout', 'Cheat', 'Meal prep'];
 
@@ -43,7 +44,12 @@ export default function AddMealScreen() {
   const [mealType, setMealType] = useState<MealType>(mealTypeForNow());
   const [caloriesEdited, setCaloriesEdited] = useState(false);
   const [suggestions, setSuggestions] = useState<Food[]>([]);
+  const [presets, setPresets] = useState<Preset[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing && !isQuick) getPresets().then(setPresets);
+  }, [isEditing, isQuick]);
 
   // Load the meal being edited, or fall back to the add title.
   useEffect(() => {
@@ -98,6 +104,16 @@ export default function AddMealScreen() {
     setCarbs(food.carbs ? String(food.carbs) : '');
     setFat(food.fat ? String(food.fat) : '');
     setCalories(String(food.calories));
+    setCaloriesEdited(true);
+  };
+
+  const applyPreset = (preset: Preset) => {
+    selectionFeedback();
+    setName(preset.name);
+    setProtein(preset.protein ? String(preset.protein) : '');
+    setCarbs(preset.carbs ? String(preset.carbs) : '');
+    setFat(preset.fat ? String(preset.fat) : '');
+    setCalories(String(preset.calories));
     setCaloriesEdited(true);
   };
 
@@ -157,6 +173,21 @@ export default function AddMealScreen() {
             label: mealTypeMeta[t].label,
           }))}
         />
+
+        {!isEditing && !isQuick && presets.length > 0 && !name.trim() ? (
+          <View style={styles.presetRow}>
+            {presets.map((p) => (
+              <Pressable
+                key={p.id}
+                onPress={() => applyPreset(p)}
+                style={({ pressed }) => [styles.presetChip, pressed && styles.pressed]}
+              >
+                <Ionicons name="flash" size={13} color={colors.accent} />
+                <Text style={styles.presetText}>{p.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
         <Field
           label={isQuick ? 'Name (optional)' : 'Food'}
@@ -409,6 +440,17 @@ const styles = StyleSheet.create({
     fontWeight: font.weight.medium,
     marginBottom: -spacing.sm,
   },
+  presetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: -spacing.sm },
+  presetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.accentDim,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  presetText: { color: colors.accent, fontSize: font.size.sm, fontWeight: font.weight.medium },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tagChip: {
     backgroundColor: colors.surfaceAlt,

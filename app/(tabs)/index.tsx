@@ -22,6 +22,7 @@ import {
 import { getExerciseTotal } from '@/db/exercise';
 import { adjustWater, getWater } from '@/db/water';
 import { addCaffeine, clearCaffeine, getCaffeine } from '@/db/caffeine';
+import { getCheckIn } from '@/db/checkins';
 import {
   formatDayLabel,
   isFuture,
@@ -40,7 +41,9 @@ import { Card, EmptyState } from '@/components/ui';
 import { mealTypeMeta } from '@/nutrition';
 import { successFeedback, tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
-import { MEAL_TYPES, type Meal, type MealType } from '@/types';
+import { MEAL_TYPES, type CheckIn, type Meal, type MealType } from '@/types';
+
+const MOOD_EMOJI = ['😟', '🙁', '😐', '🙂', '😄'];
 
 interface Section {
   type: MealType;
@@ -70,10 +73,11 @@ export default function TodayScreen() {
   const [caffeine, setCaffeine] = useState(0);
   const [exercise, setExercise] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [checkin, setCheckin] = useState<CheckIn | null>(null);
   const [celebrate, setCelebrate] = useState(false);
 
   const load = useCallback(async () => {
-    const [dayMeals, daySummary, glasses, mg, burned, loggedDays] =
+    const [dayMeals, daySummary, glasses, mg, burned, loggedDays, ci] =
       await Promise.all([
         getMealsForDay(day),
         getDaySummary(day),
@@ -81,6 +85,7 @@ export default function TodayScreen() {
         getCaffeine(day),
         getExerciseTotal(day),
         getLoggedDays(60),
+        getCheckIn(day),
       ]);
     setMeals(dayMeals);
     setSummary(daySummary);
@@ -88,6 +93,7 @@ export default function TodayScreen() {
     setCaffeine(mg);
     setExercise(burned);
     setStreak(streakFromDays(loggedDays));
+    setCheckin(ci);
   }, [day]);
 
   useFocusEffect(
@@ -165,6 +171,10 @@ export default function TodayScreen() {
     },
     [router, load],
   );
+
+  const calLeft = goals.calorieGoal + exercise - summary.calories;
+  const proteinLeft = goals.proteinGoal - summary.protein;
+  const showSuggestion = isToday(day) && summary.count > 0 && (calLeft > 50 || proteinLeft > 5);
 
   const sections: Section[] = MEAL_TYPES.map((type) => {
     const data = meals.filter((m) => m.mealType === type);
@@ -245,6 +255,42 @@ export default function TodayScreen() {
                 }}
               />
             </View>
+
+            {showSuggestion ? (
+              <View style={[styles.suggestCard, styles.cardGap]}>
+                <Ionicons name="bulb-outline" size={18} color={colors.warning} />
+                <Text style={styles.suggestText}>
+                  Still room today:{' '}
+                  {calLeft > 0 ? `${calLeft.toLocaleString()} kcal` : 'on calories'}
+                  {proteinLeft > 0 ? ` · ${Math.round(proteinLeft)}g protein` : ''}
+                  {proteinLeft > 20 ? ' — a lean protein source would help.' : '.'}
+                </Text>
+              </View>
+            ) : null}
+
+            {isToday(day) ? (
+              <Pressable
+                onPress={() => router.push('/checkin')}
+                style={({ pressed }) => [styles.checkin, styles.cardGap, pressed && styles.rowPressed]}
+              >
+                {checkin?.mood || checkin?.energy ? (
+                  <>
+                    <Text style={styles.checkinEmoji}>
+                      {checkin.mood ? MOOD_EMOJI[checkin.mood - 1] : '🙂'}
+                    </Text>
+                    <Text style={styles.checkinText}>
+                      Mood logged{checkin.energy ? ` · energy ${checkin.energy}/5` : ''}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="happy-outline" size={20} color={colors.accent} />
+                    <Text style={styles.checkinText}>How are you feeling today?</Text>
+                  </>
+                )}
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+            ) : null}
           </View>
         }
         renderSectionHeader={({ section }) => (
@@ -528,6 +574,31 @@ const styles = StyleSheet.create({
   },
   insightText: { color: colors.text, fontSize: font.size.sm, fontWeight: font.weight.medium },
   cardGap: { marginTop: spacing.md },
+  suggestCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  suggestText: { flex: 1, color: colors.text, fontSize: font.size.sm },
+  checkin: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  checkinEmoji: { fontSize: 20 },
+  checkinText: { flex: 1, color: colors.text, fontSize: font.size.sm, fontWeight: font.weight.medium },
   quickActions: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   quickAction: {
     flex: 1,

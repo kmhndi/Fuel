@@ -16,6 +16,9 @@ const ITEMS: Item[] = [
   { icon: 'scale-outline', title: 'Weight & body', subtitle: 'Weigh-ins, measurements, goal weight', href: '/weight' },
   { icon: 'search-outline', title: 'Search meals', subtitle: 'Find anything you have logged', href: '/meal-search' },
   { icon: 'fast-food-outline', title: 'Food library', subtitle: 'Manage your saved foods & favorites', href: '/food-library' },
+  { icon: 'calendar-outline', title: 'Calendar', subtitle: 'Heatmap of your logging & goals', href: '/calendar' },
+  { icon: 'trophy-outline', title: 'Achievements', subtitle: 'Badges and milestones', href: '/achievements' },
+  { icon: 'flash-outline', title: 'Quick-add presets', subtitle: 'Your one-tap foods', href: '/presets' },
   { icon: 'calculator-outline', title: 'Goal calculator', subtitle: 'Estimate your calorie target (TDEE)', href: '/goal-calculator' },
   { icon: 'options-outline', title: 'Goals & settings', subtitle: 'Targets, units, water, backup', href: '/settings' },
 ];
