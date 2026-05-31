@@ -35,7 +35,7 @@ supplements. Built for myself, not for the public.
   tracking. A one-tap "clear all data" lives in Settings.
 
 ## Tech
-- [Expo](https://expo.dev/) SDK 52 + React Native (TypeScript), file-based
+- [Expo](https://expo.dev/) SDK 54 + React Native (TypeScript), file-based
   routing via [Expo Router](https://docs.expo.dev/router/introduction/)
 - Local storage via [`expo-sqlite`](https://docs.expo.dev/versions/latest/sdk/sqlite/)
   with versioned migrations
