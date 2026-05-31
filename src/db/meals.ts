@@ -11,6 +11,7 @@ interface MealRow {
   carbs: number;
   fat: number;
   meal_type: MealType;
+  note: string | null;
   logged_at: string;
   day: string;
 }
@@ -24,12 +25,14 @@ function mapRow(row: MealRow): Meal {
     carbs: row.carbs,
     fat: row.fat,
     mealType: row.meal_type,
+    note: row.note,
     loggedAt: row.logged_at,
     day: row.day,
   };
 }
 
 function sanitize(meal: NewMeal) {
+  const note = meal.note?.trim();
   return {
     name: meal.name.trim(),
     calories: Math.max(0, Math.round(meal.calories)),
@@ -37,6 +40,7 @@ function sanitize(meal: NewMeal) {
     carbs: Math.max(0, Math.round(meal.carbs)),
     fat: Math.max(0, Math.round(meal.fat)),
     mealType: meal.mealType,
+    note: note ? note : null,
   };
 }
 
@@ -52,14 +56,15 @@ export async function addMeal(meal: NewMeal, day?: string): Promise<Meal> {
   const s = sanitize(meal);
 
   const result = await db.runAsync(
-    `INSERT INTO meals (name, calories, protein, carbs, fat, meal_type, logged_at, day)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO meals (name, calories, protein, carbs, fat, meal_type, note, logged_at, day)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     s.name,
     s.calories,
     s.protein,
     s.carbs,
     s.fat,
     s.mealType,
+    s.note,
     loggedAt,
     targetDay,
   );
@@ -80,7 +85,7 @@ export async function updateMeal(id: number, meal: NewMeal): Promise<void> {
   const s = sanitize(meal);
   await db.runAsync(
     `UPDATE meals
-        SET name = ?, calories = ?, protein = ?, carbs = ?, fat = ?, meal_type = ?
+        SET name = ?, calories = ?, protein = ?, carbs = ?, fat = ?, meal_type = ?, note = ?
       WHERE id = ?`,
     s.name,
     s.calories,
@@ -88,6 +93,7 @@ export async function updateMeal(id: number, meal: NewMeal): Promise<void> {
     s.carbs,
     s.fat,
     s.mealType,
+    s.note,
     id,
   );
   await rememberFood(
@@ -96,6 +102,48 @@ export async function updateMeal(id: number, meal: NewMeal): Promise<void> {
     { protein: s.protein, carbs: s.carbs, fat: s.fat },
     new Date().toISOString(),
   );
+}
+
+/** Insert a copy of an existing meal, logged now on the same day. */
+export async function duplicateMeal(meal: Meal): Promise<void> {
+  await addMeal(
+    {
+      name: meal.name,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      mealType: meal.mealType,
+      note: meal.note,
+    },
+    meal.day,
+  );
+}
+
+/**
+ * Copy every meal from `fromDay` onto `toDay`. Returns how many were copied so
+ * the UI can report the result.
+ */
+export async function copyMealsFromDay(
+  fromDay: string,
+  toDay: string,
+): Promise<number> {
+  const source = await getMealsForDay(fromDay);
+  for (const meal of source) {
+    await addMeal(
+      {
+        name: meal.name,
+        calories: meal.calories,
+        protein: meal.protein,
+        carbs: meal.carbs,
+        fat: meal.fat,
+        mealType: meal.mealType,
+        note: meal.note,
+      },
+      toDay,
+    );
+  }
+  return source.length;
 }
 
 export async function getMeal(id: number): Promise<Meal | null> {
@@ -156,6 +204,25 @@ export async function getDaySummary(day: string): Promise<DaySummary> {
 export async function deleteMeal(id: number): Promise<void> {
   const db = getDb();
   await db.runAsync('DELETE FROM meals WHERE id = ?', id);
+}
+
+/** Whether any meal has ever been logged (used to gate first-run UI). */
+export async function hasAnyMeal(): Promise<boolean> {
+  const db = getDb();
+  const row = await db.getFirstAsync<{ c: number }>(
+    'SELECT COUNT(*) AS c FROM meals',
+  );
+  return (row?.c ?? 0) > 0;
+}
+
+/** Set of recent days (within `days`) that have at least one meal logged. */
+export async function getLoggedDays(days: number): Promise<Set<string>> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{ day: string }>(
+    'SELECT DISTINCT day FROM meals ORDER BY day DESC LIMIT ?',
+    days,
+  );
+  return new Set(rows.map((r) => r.day));
 }
 
 /** Per-day calorie + protein totals over the last `days` days, oldest first. */

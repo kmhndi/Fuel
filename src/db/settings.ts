@@ -1,12 +1,19 @@
 import { getDb } from './index';
 import { cancelAllReminders } from '../notifications';
-import type { Goals } from '../types';
+import type { Goals, Sex, WeightUnit } from '../types';
 
 interface SettingsRow {
   calorie_goal: number;
   protein_goal: number;
   carb_goal: number;
   fat_goal: number;
+  water_goal: number;
+  glass_ml: number;
+  weight_unit: WeightUnit;
+  sex: Sex | null;
+  age: number | null;
+  height_cm: number | null;
+  activity: number;
   onboarded: number;
 }
 
@@ -15,6 +22,13 @@ const DEFAULTS: Goals = {
   proteinGoal: 140,
   carbGoal: 220,
   fatGoal: 65,
+  waterGoal: 8,
+  glassMl: 250,
+  weightUnit: 'kg',
+  sex: null,
+  age: null,
+  heightCm: null,
+  activity: 1.2,
   onboarded: false,
 };
 
@@ -30,32 +44,61 @@ export async function getGoals(): Promise<Goals> {
     proteinGoal: row.protein_goal,
     carbGoal: row.carb_goal,
     fatGoal: row.fat_goal,
+    waterGoal: row.water_goal,
+    glassMl: row.glass_ml,
+    weightUnit: row.weight_unit,
+    sex: row.sex,
+    age: row.age,
+    heightCm: row.height_cm,
+    activity: row.activity,
     onboarded: row.onboarded === 1,
   };
 }
 
-/** Persist goals and mark the user as onboarded. */
-export async function saveGoals(
-  goals: Omit<Goals, 'onboarded'>,
-): Promise<void> {
+export type GoalUpdate = Partial<Omit<Goals, 'onboarded'>>;
+
+/**
+ * Persist any subset of goals/profile fields and mark the user as onboarded.
+ * Only the provided keys are written, so callers can update one section
+ * (e.g. just the water goal) without clobbering the rest.
+ */
+export async function saveGoals(update: GoalUpdate): Promise<void> {
   const db = getDb();
+  const current = await getGoals();
+  const next = { ...current, ...update };
   await db.runAsync(
-    `INSERT INTO settings (id, calorie_goal, protein_goal, carb_goal, fat_goal, onboarded)
-     VALUES (1, ?, ?, ?, ?, 1)
+    `INSERT INTO settings
+       (id, calorie_goal, protein_goal, carb_goal, fat_goal, water_goal,
+        glass_ml, weight_unit, sex, age, height_cm, activity, onboarded)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
      ON CONFLICT(id) DO UPDATE SET
        calorie_goal = excluded.calorie_goal,
        protein_goal = excluded.protein_goal,
        carb_goal = excluded.carb_goal,
        fat_goal = excluded.fat_goal,
+       water_goal = excluded.water_goal,
+       glass_ml = excluded.glass_ml,
+       weight_unit = excluded.weight_unit,
+       sex = excluded.sex,
+       age = excluded.age,
+       height_cm = excluded.height_cm,
+       activity = excluded.activity,
        onboarded = 1`,
-    Math.max(0, Math.round(goals.calorieGoal)),
-    Math.max(0, Math.round(goals.proteinGoal)),
-    Math.max(0, Math.round(goals.carbGoal)),
-    Math.max(0, Math.round(goals.fatGoal)),
+    Math.max(0, Math.round(next.calorieGoal)),
+    Math.max(0, Math.round(next.proteinGoal)),
+    Math.max(0, Math.round(next.carbGoal)),
+    Math.max(0, Math.round(next.fatGoal)),
+    Math.max(1, Math.round(next.waterGoal)),
+    Math.max(50, Math.round(next.glassMl)),
+    next.weightUnit,
+    next.sex,
+    next.age,
+    next.heightCm,
+    next.activity,
   );
 }
 
-/** Wipe all logged data (meals, food library, supplements, adherence). */
+/** Wipe all logged data across every table (keeps goals/settings). */
 export async function clearAllData(): Promise<void> {
   const db = getDb();
   await db.execAsync(`
@@ -63,6 +106,9 @@ export async function clearAllData(): Promise<void> {
     DELETE FROM foods;
     DELETE FROM supplement_logs;
     DELETE FROM supplements;
+    DELETE FROM water;
+    DELETE FROM weights;
+    DELETE FROM exercise;
   `);
   // Drop any reminders that were scheduled for the now-deleted supplements.
   await cancelAllReminders();

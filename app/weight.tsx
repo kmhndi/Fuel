@@ -1,0 +1,261 @@
+import { useCallback, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Polyline } from 'react-native-svg';
+import { addWeight, deleteWeight, getWeights } from '@/db/weights';
+import { formatDayLabel } from '@/db/dates';
+import { useGoals } from '@/state/GoalsContext';
+import { Card, EmptyState, PrimaryButton } from '@/components/ui';
+import { displayToKg, kgToDisplay } from '@/health';
+import { successFeedback } from '@/haptics';
+import { colors, font, radius, spacing } from '@/theme';
+import type { WeightEntry } from '@/types';
+
+export default function WeightScreen() {
+  const { goals } = useGoals();
+  const unit = goals.weightUnit;
+  const [entries, setEntries] = useState<WeightEntry[]>([]);
+  const [input, setInput] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    setEntries(await getWeights());
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const value = Number.parseFloat(input);
+  const canSave = Number.isFinite(value) && value > 0;
+
+  const save = async () => {
+    if (!canSave || saving) return;
+    setSaving(true);
+    await addWeight(displayToKg(value, unit));
+    successFeedback();
+    setInput('');
+    setSaving(false);
+    load();
+  };
+
+  const confirmDelete = (entry: WeightEntry) => {
+    Alert.alert('Delete entry', `Remove the weight from ${formatDayLabel(entry.day)}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteWeight(entry.id);
+          load();
+        },
+      },
+    ]);
+  };
+
+  const latest = entries.at(-1) ?? null;
+  const first = entries[0] ?? null;
+  const changeKg = latest && first ? latest.kg - first.kg : 0;
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {latest ? (
+          <View style={styles.statsRow}>
+            <Card style={styles.stat}>
+              <Text style={styles.statLabel}>Current</Text>
+              <Text style={styles.statValue}>
+                {kgToDisplay(latest.kg, unit).toFixed(1)}
+                <Text style={styles.statUnit}> {unit}</Text>
+              </Text>
+            </Card>
+            <Card style={styles.stat}>
+              <Text style={styles.statLabel}>Since start</Text>
+              <Text
+                style={[
+                  styles.statValue,
+                  { color: changeKg > 0 ? colors.warning : colors.accent },
+                ]}
+              >
+                {changeKg > 0 ? '+' : ''}
+                {kgToDisplay(changeKg, unit).toFixed(1)}
+                <Text style={styles.statUnit}> {unit}</Text>
+              </Text>
+            </Card>
+          </View>
+        ) : null}
+
+        {entries.length >= 2 ? (
+          <Card>
+            <Text style={styles.chartTitle}>Trend</Text>
+            <WeightChart entries={entries} unit={unit} />
+          </Card>
+        ) : null}
+
+        <Card style={styles.logCard}>
+          <Text style={styles.logLabel}>Log today's weight</Text>
+          <View style={styles.logRow}>
+            <View style={styles.inputWrap}>
+              <TextInput
+                value={input}
+                onChangeText={(t) => setInput(t.replace(/[^0-9.]/g, ''))}
+                placeholder="0.0"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="decimal-pad"
+                style={styles.input}
+              />
+              <Text style={styles.inputUnit}>{unit}</Text>
+            </View>
+          </View>
+          <PrimaryButton label="Save weight" onPress={save} disabled={!canSave} loading={saving} />
+        </Card>
+
+        {entries.length > 0 ? (
+          <View style={styles.history}>
+            <Text style={styles.historyLabel}>History</Text>
+            {[...entries].reverse().map((entry) => (
+              <Pressable
+                key={entry.id}
+                onLongPress={() => confirmDelete(entry)}
+                style={({ pressed }) => [styles.entry, pressed && styles.pressed]}
+              >
+                <Text style={styles.entryDay}>{formatDayLabel(entry.day)}</Text>
+                <Text style={styles.entryValue}>
+                  {kgToDisplay(entry.kg, unit).toFixed(1)} {unit}
+                </Text>
+              </Pressable>
+            ))}
+            <Text style={styles.hint}>Long-press an entry to delete it.</Text>
+          </View>
+        ) : (
+          <EmptyState
+            icon={<Ionicons name="scale-outline" size={40} color={colors.textMuted} />}
+            title="No weigh-ins yet"
+            subtitle="Log your weight to see your trend and change over time."
+          />
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+/** Simple SVG line chart of weight over time. */
+function WeightChart({ entries, unit }: { entries: WeightEntry[]; unit: string }) {
+  const width = 300;
+  const height = 140;
+  const pad = 12;
+
+  const values = entries.map((e) => e.kg);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const points = entries.map((e, i) => {
+    const x = pad + (i / (entries.length - 1)) * (width - pad * 2);
+    const y = pad + (1 - (e.kg - min) / range) * (height - pad * 2);
+    return { x, y };
+  });
+  const polyline = points.map((p) => `${p.x},${p.y}`).join(' ');
+
+  return (
+    <View style={styles.chartWrap}>
+      <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+        <Polyline
+          points={polyline}
+          fill="none"
+          stroke={colors.accent}
+          strokeWidth={2.5}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        {points.map((p, i) => (
+          <Circle key={i} cx={p.x} cy={p.y} r={3} fill={colors.accent} />
+        ))}
+      </Svg>
+      <View style={styles.chartAxis}>
+        <Text style={styles.axisLabel}>
+          {kgToDisplay(max, unit as 'kg' | 'lb').toFixed(1)} {unit}
+        </Text>
+        <Text style={styles.axisLabel}>
+          {kgToDisplay(min, unit as 'kg' | 'lb').toFixed(1)} {unit}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing.lg, gap: spacing.md },
+  statsRow: { flexDirection: 'row', gap: spacing.md },
+  stat: { flex: 1, gap: spacing.xs },
+  statLabel: {
+    color: colors.textMuted,
+    fontSize: font.size.xs,
+    fontWeight: font.weight.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  statValue: { color: colors.text, fontSize: font.size.xl, fontWeight: font.weight.bold },
+  statUnit: { color: colors.textMuted, fontSize: font.size.md, fontWeight: font.weight.regular },
+  chartTitle: {
+    color: colors.text,
+    fontSize: font.size.md,
+    fontWeight: font.weight.semibold,
+    marginBottom: spacing.md,
+  },
+  chartWrap: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm },
+  chartAxis: { justifyContent: 'space-between', paddingVertical: spacing.sm },
+  axisLabel: { color: colors.textMuted, fontSize: 10 },
+  logCard: { gap: spacing.md },
+  logLabel: { color: colors.text, fontSize: font.size.md, fontWeight: font.weight.semibold },
+  logRow: { flexDirection: 'row' },
+  inputWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+  },
+  input: { flex: 1, paddingVertical: spacing.md, color: colors.text, fontSize: font.size.xl },
+  inputUnit: { color: colors.textMuted, fontSize: font.size.md },
+  history: { gap: spacing.sm },
+  historyLabel: {
+    color: colors.textMuted,
+    fontSize: font.size.sm,
+    fontWeight: font.weight.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  entry: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  pressed: { opacity: 0.7 },
+  entryDay: { color: colors.text, fontSize: font.size.md },
+  entryValue: { color: colors.accent, fontSize: font.size.md, fontWeight: font.weight.semibold },
+  hint: { color: colors.textMuted, fontSize: font.size.xs, marginTop: spacing.xs },
+});

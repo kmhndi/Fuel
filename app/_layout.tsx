@@ -56,8 +56,22 @@ export default function RootLayout() {
           options={{ presentation: 'modal', title: 'New supplement' }}
         />
         <Stack.Screen
+          name="add-exercise"
+          options={{ presentation: 'modal', title: 'Log exercise' }}
+        />
+        <Stack.Screen
           name="settings"
           options={{ presentation: 'modal', title: 'Goals & settings' }}
+        />
+        <Stack.Screen name="weight" options={{ title: 'Weight' }} />
+        <Stack.Screen name="food-library" options={{ title: 'Food library' }} />
+        <Stack.Screen
+          name="goal-calculator"
+          options={{ presentation: 'modal', title: 'Goal calculator' }}
+        />
+        <Stack.Screen
+          name="onboarding"
+          options={{ headerShown: false, gestureEnabled: false }}
         />
       </Stack>
     </GoalsProvider>

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   deleteSupplement,
   getSupplementsWithStatus,
+  markAllTaken,
   setSupplementEnabled,
   setTaken,
 } from '@/db/supplements';
@@ -20,7 +21,7 @@ import { formatTime } from '@/db/dates';
 import { Card, EmptyState } from '@/components/ui';
 import { selectionFeedback, successFeedback, tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
-import type { Supplement, SupplementStatus } from '@/types';
+import type { SupplementStatus } from '@/types';
 
 export default function SupplementsScreen() {
   const router = useRouter();
@@ -65,26 +66,45 @@ export default function SupplementsScreen() {
     [],
   );
 
-  const confirmDelete = useCallback(
-    (item: Supplement) => {
-      Alert.alert(
-        'Delete supplement',
-        `Stop tracking "${item.name}"? This also clears its history.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              await deleteSupplement(item);
-              load();
-            },
+  const onRowActions = useCallback(
+    (item: SupplementStatus) => {
+      Alert.alert(item.name, undefined, [
+        {
+          text: 'Edit',
+          onPress: () => router.push(`/add-supplement?id=${item.id}`),
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Delete supplement',
+              `Stop tracking "${item.name}"? This also clears its history.`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await deleteSupplement(item);
+                    load();
+                  },
+                },
+              ],
+            );
           },
-        ],
-      );
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
     },
-    [load],
+    [router, load],
   );
+
+  const onMarkAll = useCallback(async () => {
+    successFeedback();
+    await markAllTaken();
+    load();
+  }, [load]);
 
   const takenCount = items.filter((s) => s.takenToday).length;
 
@@ -96,7 +116,11 @@ export default function SupplementsScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           items.length > 0 ? (
-            <SummaryCard taken={takenCount} total={items.length} />
+            <SummaryCard
+              taken={takenCount}
+              total={items.length}
+              onMarkAll={onMarkAll}
+            />
           ) : null
         }
         renderItem={({ item }) => (
@@ -104,7 +128,7 @@ export default function SupplementsScreen() {
             item={item}
             onToggleTaken={() => toggleTaken(item)}
             onToggleReminder={() => toggleReminder(item)}
-            onLongPress={() => confirmDelete(item)}
+            onLongPress={() => onRowActions(item)}
           />
         )}
         ListEmptyComponent={
@@ -136,7 +160,15 @@ export default function SupplementsScreen() {
   );
 }
 
-function SummaryCard({ taken, total }: { taken: number; total: number }) {
+function SummaryCard({
+  taken,
+  total,
+  onMarkAll,
+}: {
+  taken: number;
+  total: number;
+  onMarkAll: () => void;
+}) {
   const pct = total > 0 ? taken / total : 0;
   const allDone = taken === total && total > 0;
   return (
@@ -152,7 +184,15 @@ function SummaryCard({ taken, total }: { taken: number; total: number }) {
       </View>
       {allDone ? (
         <Text style={styles.summaryDone}>All caught up — nice. 🎉</Text>
-      ) : null}
+      ) : (
+        <Pressable
+          onPress={onMarkAll}
+          style={({ pressed }) => [styles.markAll, pressed && { opacity: 0.7 }]}
+        >
+          <Ionicons name="checkmark-done" size={16} color={colors.accent} />
+          <Text style={styles.markAllText}>Mark all taken</Text>
+        </Pressable>
+      )}
     </Card>
   );
 }
@@ -256,6 +296,17 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: font.size.sm,
     fontWeight: font.weight.medium,
+  },
+  markAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  markAllText: {
+    color: colors.accent,
+    fontSize: font.size.sm,
+    fontWeight: font.weight.semibold,
   },
   row: {
     flexDirection: 'row',

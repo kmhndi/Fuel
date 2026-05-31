@@ -81,6 +81,41 @@ const MIGRATIONS: string[] = [
     );
     INSERT OR IGNORE INTO settings (id) VALUES (1);
   `,
+  // 2 -> 3: water, weight, and exercise tracking; meal notes; and the extra
+  // settings needed for the TDEE calculator, water goal, and unit prefs.
+  `
+    ALTER TABLE meals ADD COLUMN note TEXT;
+
+    CREATE TABLE IF NOT EXISTS water (
+      day TEXT PRIMARY KEY NOT NULL,
+      glasses INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS weights (
+      id INTEGER PRIMARY KEY NOT NULL,
+      kg REAL NOT NULL,
+      logged_at TEXT NOT NULL,
+      day TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_weights_day ON weights (day);
+
+    CREATE TABLE IF NOT EXISTS exercise (
+      id INTEGER PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      calories INTEGER NOT NULL,
+      logged_at TEXT NOT NULL,
+      day TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_exercise_day ON exercise (day);
+
+    ALTER TABLE settings ADD COLUMN water_goal INTEGER NOT NULL DEFAULT 8;
+    ALTER TABLE settings ADD COLUMN glass_ml INTEGER NOT NULL DEFAULT 250;
+    ALTER TABLE settings ADD COLUMN weight_unit TEXT NOT NULL DEFAULT 'kg';
+    ALTER TABLE settings ADD COLUMN sex TEXT;
+    ALTER TABLE settings ADD COLUMN age INTEGER;
+    ALTER TABLE settings ADD COLUMN height_cm REAL;
+    ALTER TABLE settings ADD COLUMN activity REAL NOT NULL DEFAULT 1.2;
+  `,
 ];
 
 /**

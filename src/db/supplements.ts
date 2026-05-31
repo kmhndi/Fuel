@@ -1,5 +1,5 @@
 import { getDb } from './index';
-import { shiftDay, toDayKey } from './dates';
+import { shiftDay, streakFromDays, toDayKey } from './dates';
 import {
   cancelReminder,
   scheduleDailyReminder,
@@ -38,24 +38,6 @@ export async function getSupplements(): Promise<Supplement[]> {
 }
 
 /**
- * Consecutive-day streak ending today (or yesterday, so a not-yet-taken-today
- * supplement still shows its live streak).
- */
-function computeStreak(takenDays: Set<string>): number {
-  let cursor = toDayKey();
-  if (!takenDays.has(cursor)) {
-    cursor = shiftDay(cursor, -1);
-    if (!takenDays.has(cursor)) return 0;
-  }
-  let streak = 0;
-  while (takenDays.has(cursor)) {
-    streak++;
-    cursor = shiftDay(cursor, -1);
-  }
-  return streak;
-}
-
-/**
  * Supplements augmented with today's "taken" state and current streak — the
  * data the daily checklist needs.
  */
@@ -83,7 +65,7 @@ export async function getSupplementsWithStatus(): Promise<SupplementStatus[]> {
     return {
       ...s,
       takenToday: days.has(today),
-      streak: computeStreak(days),
+      streak: streakFromDays(days),
     };
   });
 }
@@ -106,6 +88,91 @@ export async function getRecentAdherence(
     since,
   );
   return { taken: takenRow?.c ?? 0, possible: supplementCount * days };
+}
+
+export async function getSupplement(id: number): Promise<Supplement | null> {
+  const db = getDb();
+  const row = await db.getFirstAsync<SupplementRow>(
+    'SELECT * FROM supplements WHERE id = ?',
+    id,
+  );
+  return row ? mapRow(row) : null;
+}
+
+/**
+ * Update a supplement's details and, if its reminder is enabled, reschedule
+ * the notification for the new name/dose/time.
+ */
+export async function updateSupplement(
+  id: number,
+  input: NewSupplement,
+): Promise<void> {
+  const db = getDb();
+  const existing = await getSupplement(id);
+  if (!existing) return;
+
+  const name = input.name.trim();
+  const dose = input.dose?.trim() ? input.dose.trim() : null;
+  let notificationId = existing.notificationId;
+
+  if (existing.enabled) {
+    await cancelReminder(existing.notificationId);
+    notificationId = await scheduleDailyReminder(
+      name,
+      dose,
+      input.hour,
+      input.minute,
+    ).catch(() => null);
+  }
+
+  await db.runAsync(
+    `UPDATE supplements
+        SET name = ?, dose = ?, hour = ?, minute = ?, notification_id = ?
+      WHERE id = ?`,
+    name,
+    dose,
+    input.hour,
+    input.minute,
+    notificationId,
+    id,
+  );
+}
+
+/** Mark every supplement as taken for the given day. */
+export async function markAllTaken(day: string = toDayKey()): Promise<void> {
+  const supplements = await getSupplements();
+  for (const s of supplements) {
+    await setTaken(s.id, true, day);
+  }
+}
+
+/**
+ * Daily completion over the last `days` days: how many supplements were taken
+ * each day versus the current supplement count. Oldest first, for a dot strip.
+ */
+export async function getDailyAdherence(
+  days: number,
+): Promise<{ day: string; taken: number; total: number }[]> {
+  const db = getDb();
+  const countRow = await db.getFirstAsync<{ c: number }>(
+    'SELECT COUNT(*) AS c FROM supplements',
+  );
+  const total = countRow?.c ?? 0;
+
+  const since = shiftDay(toDayKey(), -(days - 1));
+  const rows = await db.getAllAsync<{ day: string; taken: number }>(
+    `SELECT day, COUNT(*) AS taken FROM supplement_logs
+      WHERE day >= ? GROUP BY day`,
+    since,
+  );
+  const takenByDay = new Map(rows.map((r) => [r.day, r.taken]));
+
+  const result: { day: string; taken: number; total: number }[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = shiftDay(toDayKey(), -i);
+    result.push({ day, taken: takenByDay.get(day) ?? 0, total });
+  }
+  return result;
 }
 
 /** Mark (or unmark) a supplement as taken on a given day. */

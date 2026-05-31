@@ -46,6 +46,24 @@ export function isFuture(dayKey: string): boolean {
   return dayKey > toDayKey();
 }
 
+/**
+ * Consecutive-day streak ending today (or yesterday, so a streak stays "alive"
+ * before today's entry is made). Shared by meal-logging and supplement streaks.
+ */
+export function streakFromDays(days: Set<string>): number {
+  let cursor = toDayKey();
+  if (!days.has(cursor)) {
+    cursor = shiftDay(cursor, -1);
+    if (!days.has(cursor)) return 0;
+  }
+  let streak = 0;
+  while (days.has(cursor)) {
+    streak++;
+    cursor = shiftDay(cursor, -1);
+  }
+  return streak;
+}
+
 /** Format an hour/minute pair as a localized time, e.g. "8:30 AM". */
 export function formatTime(hour: number, minute: number): string {
   const d = new Date();

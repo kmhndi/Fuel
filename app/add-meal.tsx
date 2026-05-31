@@ -24,15 +24,17 @@ import { MEAL_TYPES, type Food, type MealType } from '@/types';
 export default function AddMealScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const params = useLocalSearchParams<{ id?: string; day?: string }>();
+  const params = useLocalSearchParams<{ id?: string; day?: string; quick?: string }>();
   const editingId = params.id ? Number(params.id) : null;
   const isEditing = editingId !== null;
+  const isQuick = params.quick === '1' && !isEditing;
 
   const [name, setName] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  const [note, setNote] = useState('');
   const [mealType, setMealType] = useState<MealType>(mealTypeForNow());
   const [caloriesEdited, setCaloriesEdited] = useState(false);
   const [suggestions, setSuggestions] = useState<Food[]>([]);
@@ -40,7 +42,9 @@ export default function AddMealScreen() {
 
   // Load the meal being edited, or fall back to the add title.
   useEffect(() => {
-    navigation.setOptions({ title: isEditing ? 'Edit meal' : 'Log a meal' });
+    navigation.setOptions({
+      title: isQuick ? 'Quick calories' : isEditing ? 'Edit meal' : 'Log a meal',
+    });
     if (editingId !== null) {
       getMeal(editingId).then((meal) => {
         if (!meal) return;
@@ -49,17 +53,18 @@ export default function AddMealScreen() {
         setProtein(meal.protein ? String(meal.protein) : '');
         setCarbs(meal.carbs ? String(meal.carbs) : '');
         setFat(meal.fat ? String(meal.fat) : '');
+        setNote(meal.note ?? '');
         setMealType(meal.mealType);
         setCaloriesEdited(true);
       });
     }
-  }, [editingId, isEditing, navigation]);
+  }, [editingId, isEditing, isQuick, navigation]);
 
   // Live food-library search keyed off the name field (recents when empty).
   const refreshSuggestions = useCallback(async () => {
-    if (isEditing) return;
+    if (isEditing || isQuick) return;
     setSuggestions(await getFoodSuggestions(name, 12));
-  }, [name, isEditing]);
+  }, [name, isEditing, isQuick]);
 
   useEffect(() => {
     refreshSuggestions();
@@ -89,22 +94,23 @@ export default function AddMealScreen() {
   };
 
   const parsedCalories = Number.parseInt(calories, 10);
-  const canSave =
-    name.trim().length > 0 &&
-    Number.isFinite(parsedCalories) &&
-    parsedCalories >= 0;
+  const caloriesOk = Number.isFinite(parsedCalories) && parsedCalories >= 0;
+  const canSave = isQuick
+    ? caloriesOk && parsedCalories > 0
+    : caloriesOk && name.trim().length > 0;
 
   const save = async () => {
     if (!canSave || saving) return;
     setSaving(true);
     try {
       const payload = {
-        name: name.trim(),
+        name: name.trim() || (isQuick ? 'Quick add' : ''),
         calories: parsedCalories,
         protein: num(protein),
         carbs: num(carbs),
         fat: num(fat),
         mealType,
+        note: note.trim() || null,
       };
       if (editingId !== null) {
         await updateMeal(editingId, payload);
@@ -142,14 +148,14 @@ export default function AddMealScreen() {
         />
 
         <Field
-          label="Food"
+          label={isQuick ? 'Name (optional)' : 'Food'}
           value={name}
           onChangeText={setName}
-          placeholder="e.g. Greek yogurt with berries"
-          autoFocus={!isEditing}
+          placeholder={isQuick ? 'Quick add' : 'e.g. Greek yogurt with berries'}
+          autoFocus={!isEditing && !isQuick}
         />
 
-        {!isEditing && suggestions.length > 0 ? (
+        {!isEditing && !isQuick && suggestions.length > 0 ? (
           <View style={styles.suggestions}>
             <Text style={styles.suggestionsLabel}>
               {name.trim() ? 'Matches' : 'Recent & favorites'}
@@ -198,10 +204,13 @@ export default function AddMealScreen() {
           placeholder="0"
           keyboardType="number-pad"
           suffix="kcal"
+          autoFocus={isQuick}
         />
 
-        <Text style={styles.macrosHeading}>Macros (optional)</Text>
-        <View style={styles.macrosRow}>
+        {!isQuick ? (
+          <>
+            <Text style={styles.macrosHeading}>Macros (optional)</Text>
+            <View style={styles.macrosRow}>
           <View style={styles.macroCell}>
             <Field
               label="Protein"
@@ -236,11 +245,20 @@ export default function AddMealScreen() {
             />
           </View>
         </View>
-        {macroCalories > 0 ? (
-          <Text style={styles.macroHint}>
-            Macros add up to ~{macroCalories} kcal
-          </Text>
+            {macroCalories > 0 ? (
+              <Text style={styles.macroHint}>
+                Macros add up to ~{macroCalories} kcal
+              </Text>
+            ) : null}
+          </>
         ) : null}
+
+        <Field
+          label="Note (optional)"
+          value={note}
+          onChangeText={setNote}
+          placeholder="Anything worth remembering"
+        />
       </ScrollView>
 
       <View style={styles.footer}>

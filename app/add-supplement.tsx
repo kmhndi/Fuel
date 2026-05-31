@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -13,15 +13,25 @@ import {
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { addSupplement } from '@/db/supplements';
+import {
+  addSupplement,
+  getSupplement,
+  updateSupplement,
+} from '@/db/supplements';
 import { formatTime } from '@/db/dates';
 import { PrimaryButton } from '@/components/ui';
+import { successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 
 export default function AddSupplementScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const params = useLocalSearchParams<{ id?: string }>();
+  const editingId = params.id ? Number(params.id) : null;
+  const isEditing = editingId !== null;
+
   const [name, setName] = useState('');
   const [dose, setDose] = useState('');
   const [time, setTime] = useState(() => {
@@ -32,6 +42,22 @@ export default function AddSupplementScreen() {
   });
   const [showPicker, setShowPicker] = useState(Platform.OS === 'ios');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: isEditing ? 'Edit supplement' : 'New supplement',
+    });
+    if (editingId !== null) {
+      getSupplement(editingId).then((s) => {
+        if (!s) return;
+        setName(s.name);
+        setDose(s.dose ?? '');
+        const d = new Date();
+        d.setHours(s.hour, s.minute, 0, 0);
+        setTime(d);
+      });
+    }
+  }, [editingId, isEditing, navigation]);
 
   const canSave = name.trim().length > 0;
 
@@ -44,19 +70,24 @@ export default function AddSupplementScreen() {
     if (!canSave || saving) return;
     setSaving(true);
     try {
-      const created = await addSupplement({
+      const input = {
         name: name.trim(),
         dose: dose.trim() || null,
         hour: time.getHours(),
         minute: time.getMinutes(),
-      });
-
-      if (!created.notificationId) {
-        Alert.alert(
-          'Reminder not scheduled',
-          'The supplement was saved, but notifications are turned off. Enable notifications for Fuel in your device settings to get reminders.',
-        );
+      };
+      if (editingId !== null) {
+        await updateSupplement(editingId, input);
+      } else {
+        const created = await addSupplement(input);
+        if (!created.notificationId) {
+          Alert.alert(
+            'Reminder not scheduled',
+            'The supplement was saved, but notifications are turned off. Enable notifications for Fuel in your device settings to get reminders.',
+          );
+        }
       }
+      successFeedback();
       router.back();
     } catch {
       setSaving(false);
@@ -118,7 +149,7 @@ export default function AddSupplementScreen() {
 
       <View style={styles.footer}>
         <PrimaryButton
-          label="Save & schedule reminder"
+          label={isEditing ? 'Save changes' : 'Save & schedule reminder'}
           onPress={save}
           disabled={!canSave}
           loading={saving}

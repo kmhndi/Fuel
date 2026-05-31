@@ -22,11 +22,34 @@ export interface Meal extends Macros {
   name: string;
   calories: number;
   mealType: MealType;
+  /** Optional free-text note (e.g. "felt too salty"). */
+  note: string | null;
   /** ISO timestamp of when the meal was logged. */
   loggedAt: string;
   /** Local calendar day in YYYY-MM-DD form, used for daily grouping. */
   day: string;
 }
+
+/** A logged bout of exercise whose calories add back to the daily budget. */
+export interface Exercise {
+  id: number;
+  name: string;
+  calories: number;
+  loggedAt: string;
+  day: string;
+}
+
+/** A body-weight entry, always stored in kilograms. */
+export interface WeightEntry {
+  id: number;
+  kg: number;
+  loggedAt: string;
+  day: string;
+}
+
+export type WeightUnit = 'kg' | 'lb';
+
+export type Sex = 'male' | 'female';
 
 /**
  * A reusable food in the library, accumulated from logged meals so common
@@ -64,12 +87,20 @@ export interface SupplementStatus extends Supplement {
   streak: number;
 }
 
-/** Daily targets the user is tracking against. */
+/** Daily targets and personal profile the user is tracking against. */
 export interface Goals {
   calorieGoal: number;
   proteinGoal: number;
   carbGoal: number;
   fatGoal: number;
+  waterGoal: number;
+  glassMl: number;
+  weightUnit: WeightUnit;
+  /** Profile fields, used by the TDEE calculator (null until provided). */
+  sex: Sex | null;
+  age: number | null;
+  heightCm: number | null;
+  activity: number;
   onboarded: boolean;
 }
 
@@ -77,6 +108,7 @@ export interface NewMeal extends Macros {
   name: string;
   calories: number;
   mealType: MealType;
+  note?: string | null;
 }
 
 export type NewSupplement = Pick<
