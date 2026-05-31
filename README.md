@@ -63,6 +63,8 @@ src/
 ```
 
 ## Getting started
+Requires **Node ≥ 20.19.4** (Expo SDK 54 / React Native 0.81 won't run on
+Node 18 — Metro uses Node 20+ APIs).
 ```bash
 npm install
 npx expo start
