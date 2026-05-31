@@ -10,8 +10,11 @@ interface MealRow {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
+  sugar: number;
   meal_type: MealType;
   note: string | null;
+  tag: string | null;
   logged_at: string;
   day: string;
 }
@@ -24,8 +27,11 @@ function mapRow(row: MealRow): Meal {
     protein: row.protein,
     carbs: row.carbs,
     fat: row.fat,
+    fiber: row.fiber,
+    sugar: row.sugar,
     mealType: row.meal_type,
     note: row.note,
+    tag: row.tag,
     loggedAt: row.logged_at,
     day: row.day,
   };
@@ -33,14 +39,18 @@ function mapRow(row: MealRow): Meal {
 
 function sanitize(meal: NewMeal) {
   const note = meal.note?.trim();
+  const tag = meal.tag?.trim();
   return {
     name: meal.name.trim(),
     calories: Math.max(0, Math.round(meal.calories)),
     protein: Math.max(0, Math.round(meal.protein)),
     carbs: Math.max(0, Math.round(meal.carbs)),
     fat: Math.max(0, Math.round(meal.fat)),
+    fiber: Math.max(0, Math.round(meal.fiber ?? 0)),
+    sugar: Math.max(0, Math.round(meal.sugar ?? 0)),
     mealType: meal.mealType,
     note: note ? note : null,
+    tag: tag ? tag : null,
   };
 }
 
@@ -56,15 +66,18 @@ export async function addMeal(meal: NewMeal, day?: string): Promise<Meal> {
   const s = sanitize(meal);
 
   const result = await db.runAsync(
-    `INSERT INTO meals (name, calories, protein, carbs, fat, meal_type, note, logged_at, day)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO meals (name, calories, protein, carbs, fat, fiber, sugar, meal_type, note, tag, logged_at, day)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     s.name,
     s.calories,
     s.protein,
     s.carbs,
     s.fat,
+    s.fiber,
+    s.sugar,
     s.mealType,
     s.note,
+    s.tag,
     loggedAt,
     targetDay,
   );
@@ -85,15 +98,19 @@ export async function updateMeal(id: number, meal: NewMeal): Promise<void> {
   const s = sanitize(meal);
   await db.runAsync(
     `UPDATE meals
-        SET name = ?, calories = ?, protein = ?, carbs = ?, fat = ?, meal_type = ?, note = ?
+        SET name = ?, calories = ?, protein = ?, carbs = ?, fat = ?, fiber = ?, sugar = ?,
+            meal_type = ?, note = ?, tag = ?
       WHERE id = ?`,
     s.name,
     s.calories,
     s.protein,
     s.carbs,
     s.fat,
+    s.fiber,
+    s.sugar,
     s.mealType,
     s.note,
+    s.tag,
     id,
   );
   await rememberFood(
@@ -113,8 +130,11 @@ export async function duplicateMeal(meal: Meal): Promise<void> {
       protein: meal.protein,
       carbs: meal.carbs,
       fat: meal.fat,
+      fiber: meal.fiber,
+      sugar: meal.sugar,
       mealType: meal.mealType,
       note: meal.note,
+      tag: meal.tag,
     },
     meal.day,
   );
@@ -137,8 +157,11 @@ export async function copyMealsFromDay(
         protein: meal.protein,
         carbs: meal.carbs,
         fat: meal.fat,
+        fiber: meal.fiber,
+        sugar: meal.sugar,
         mealType: meal.mealType,
         note: meal.note,
+        tag: meal.tag,
       },
       toDay,
     );
@@ -204,6 +227,36 @@ export async function getDaySummary(day: string): Promise<DaySummary> {
 export async function deleteMeal(id: number): Promise<void> {
   const db = getDb();
   await db.runAsync('DELETE FROM meals WHERE id = ?', id);
+}
+
+/**
+ * Search across every logged meal by name, note, or tag. Newest first.
+ * An empty query returns the most recent meals.
+ */
+export async function searchMeals(query: string, limit = 100): Promise<Meal[]> {
+  const db = getDb();
+  const like = `%${query.trim().toLowerCase()}%`;
+  const rows = await db.getAllAsync<MealRow>(
+    `SELECT * FROM meals
+      WHERE lower(name) LIKE ? OR lower(IFNULL(note, '')) LIKE ? OR lower(IFNULL(tag, '')) LIKE ?
+      ORDER BY logged_at DESC
+      LIMIT ?`,
+    like,
+    like,
+    like,
+    limit,
+  );
+  return rows.map(mapRow);
+}
+
+/** Distinct tags that have been used, most-used first. */
+export async function getUsedTags(): Promise<string[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{ tag: string }>(
+    `SELECT tag FROM meals WHERE tag IS NOT NULL AND tag != ''
+      GROUP BY tag ORDER BY COUNT(*) DESC LIMIT 12`,
+  );
+  return rows.map((r) => r.tag);
 }
 
 /** Whether any meal has ever been logged (used to gate first-run UI). */

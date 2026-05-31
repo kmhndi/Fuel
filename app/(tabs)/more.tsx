@@ -13,7 +13,8 @@ interface Item {
 }
 
 const ITEMS: Item[] = [
-  { icon: 'scale-outline', title: 'Weight', subtitle: 'Log weigh-ins and see your trend', href: '/weight' },
+  { icon: 'scale-outline', title: 'Weight & body', subtitle: 'Weigh-ins, measurements, goal weight', href: '/weight' },
+  { icon: 'search-outline', title: 'Search meals', subtitle: 'Find anything you have logged', href: '/meal-search' },
   { icon: 'fast-food-outline', title: 'Food library', subtitle: 'Manage your saved foods & favorites', href: '/food-library' },
   { icon: 'calculator-outline', title: 'Goal calculator', subtitle: 'Estimate your calorie target (TDEE)', href: '/goal-calculator' },
   { icon: 'options-outline', title: 'Goals & settings', subtitle: 'Targets, units, water, backup', href: '/settings' },

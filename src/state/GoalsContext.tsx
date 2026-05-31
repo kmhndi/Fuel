@@ -30,6 +30,12 @@ const FALLBACK: Goals = {
   age: null,
   heightCm: null,
   activity: 1.2,
+  goalWeightKg: null,
+  caffeineLimit: 400,
+  theme: 'dark',
+  accent: '#22D3A7',
+  waterReminders: false,
+  weekdayGoals: null,
   onboarded: false,
 };
 

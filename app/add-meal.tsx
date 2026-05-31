@@ -21,6 +21,8 @@ import { selectionFeedback, successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 import { MEAL_TYPES, type Food, type MealType } from '@/types';
 
+const TAG_PRESETS = ['Homemade', 'Eating out', 'Takeout', 'Cheat', 'Meal prep'];
+
 export default function AddMealScreen() {
   const router = useRouter();
   const navigation = useNavigation();
@@ -34,6 +36,9 @@ export default function AddMealScreen() {
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  const [fiber, setFiber] = useState('');
+  const [sugar, setSugar] = useState('');
+  const [tag, setTag] = useState('');
   const [note, setNote] = useState('');
   const [mealType, setMealType] = useState<MealType>(mealTypeForNow());
   const [caloriesEdited, setCaloriesEdited] = useState(false);
@@ -53,6 +58,9 @@ export default function AddMealScreen() {
         setProtein(meal.protein ? String(meal.protein) : '');
         setCarbs(meal.carbs ? String(meal.carbs) : '');
         setFat(meal.fat ? String(meal.fat) : '');
+        setFiber(meal.fiber ? String(meal.fiber) : '');
+        setSugar(meal.sugar ? String(meal.sugar) : '');
+        setTag(meal.tag ?? '');
         setNote(meal.note ?? '');
         setMealType(meal.mealType);
         setCaloriesEdited(true);
@@ -109,8 +117,11 @@ export default function AddMealScreen() {
         protein: num(protein),
         carbs: num(carbs),
         fat: num(fat),
+        fiber: num(fiber),
+        sugar: num(sugar),
         mealType,
         note: note.trim() || null,
+        tag: tag.trim() || null,
       };
       if (editingId !== null) {
         await updateMeal(editingId, payload);
@@ -248,10 +259,58 @@ export default function AddMealScreen() {
             {macroCalories > 0 ? (
               <Text style={styles.macroHint}>
                 Macros add up to ~{macroCalories} kcal
+                {num(carbs) > 0 && num(fiber) > 0
+                  ? ` · net carbs ${Math.max(0, num(carbs) - num(fiber))}g`
+                  : ''}
               </Text>
             ) : null}
+            <View style={styles.macrosRow}>
+              <View style={styles.macroCell}>
+                <Field
+                  label="Fiber"
+                  value={fiber}
+                  onChangeText={(t) => setFiber(t.replace(/[^0-9.]/g, ''))}
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                  suffix="g"
+                  style={styles.macroInput}
+                />
+              </View>
+              <View style={styles.macroCell}>
+                <Field
+                  label="Sugar"
+                  value={sugar}
+                  onChangeText={(t) => setSugar(t.replace(/[^0-9.]/g, ''))}
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                  suffix="g"
+                  style={styles.macroInput}
+                />
+              </View>
+            </View>
           </>
         ) : null}
+
+        <Text style={styles.tagLabel}>Tag (optional)</Text>
+        <View style={styles.tags}>
+          {TAG_PRESETS.map((t) => {
+            const active = tag === t;
+            return (
+              <Pressable
+                key={t}
+                onPress={() => {
+                  selectionFeedback();
+                  setTag(active ? '' : t);
+                }}
+                style={[styles.tagChip, active && styles.tagChipActive]}
+              >
+                <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>
+                  {t}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <Field
           label="Note (optional)"
@@ -344,6 +403,24 @@ const styles = StyleSheet.create({
     fontSize: font.size.sm,
     marginTop: -spacing.sm,
   },
+  tagLabel: {
+    color: colors.textMuted,
+    fontSize: font.size.sm,
+    fontWeight: font.weight.medium,
+    marginBottom: -spacing.sm,
+  },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  tagChip: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  tagChipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+  tagChipText: { color: colors.textMuted, fontSize: font.size.sm, fontWeight: font.weight.medium },
+  tagChipTextActive: { color: colors.accent },
   footer: {
     padding: spacing.lg,
     borderTopWidth: StyleSheet.hairlineWidth,

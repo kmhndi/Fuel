@@ -1,6 +1,6 @@
 import { getDb } from './index';
 import { cancelAllReminders } from '../notifications';
-import type { Goals, Sex, WeightUnit } from '../types';
+import type { Goals, Sex, ThemeMode, WeightUnit } from '../types';
 
 interface SettingsRow {
   calorie_goal: number;
@@ -14,6 +14,12 @@ interface SettingsRow {
   age: number | null;
   height_cm: number | null;
   activity: number;
+  goal_weight_kg: number | null;
+  caffeine_limit: number;
+  theme: ThemeMode;
+  accent: string;
+  water_reminders: number;
+  weekday_goals: string | null;
   onboarded: number;
 }
 
@@ -29,8 +35,24 @@ const DEFAULTS: Goals = {
   age: null,
   heightCm: null,
   activity: 1.2,
+  goalWeightKg: null,
+  caffeineLimit: 400,
+  theme: 'dark',
+  accent: '#22D3A7',
+  waterReminders: false,
+  weekdayGoals: null,
   onboarded: false,
 };
+
+function parseWeekdayGoals(raw: string | null): (number | null)[] | null {
+  if (!raw) return null;
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) && arr.length === 7 ? arr : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Read the single settings row, falling back to defaults if absent. */
 export async function getGoals(): Promise<Goals> {
@@ -51,6 +73,12 @@ export async function getGoals(): Promise<Goals> {
     age: row.age,
     heightCm: row.height_cm,
     activity: row.activity,
+    goalWeightKg: row.goal_weight_kg,
+    caffeineLimit: row.caffeine_limit,
+    theme: row.theme,
+    accent: row.accent,
+    waterReminders: row.water_reminders === 1,
+    weekdayGoals: parseWeekdayGoals(row.weekday_goals),
     onboarded: row.onboarded === 1,
   };
 }
@@ -60,7 +88,7 @@ export type GoalUpdate = Partial<Omit<Goals, 'onboarded'>>;
 /**
  * Persist any subset of goals/profile fields and mark the user as onboarded.
  * Only the provided keys are written, so callers can update one section
- * (e.g. just the water goal) without clobbering the rest.
+ * without clobbering the rest.
  */
 export async function saveGoals(update: GoalUpdate): Promise<void> {
   const db = getDb();
@@ -69,8 +97,9 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
   await db.runAsync(
     `INSERT INTO settings
        (id, calorie_goal, protein_goal, carb_goal, fat_goal, water_goal,
-        glass_ml, weight_unit, sex, age, height_cm, activity, onboarded)
-     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        glass_ml, weight_unit, sex, age, height_cm, activity, goal_weight_kg,
+        caffeine_limit, theme, accent, water_reminders, weekday_goals, onboarded)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
      ON CONFLICT(id) DO UPDATE SET
        calorie_goal = excluded.calorie_goal,
        protein_goal = excluded.protein_goal,
@@ -83,6 +112,12 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
        age = excluded.age,
        height_cm = excluded.height_cm,
        activity = excluded.activity,
+       goal_weight_kg = excluded.goal_weight_kg,
+       caffeine_limit = excluded.caffeine_limit,
+       theme = excluded.theme,
+       accent = excluded.accent,
+       water_reminders = excluded.water_reminders,
+       weekday_goals = excluded.weekday_goals,
        onboarded = 1`,
     Math.max(0, Math.round(next.calorieGoal)),
     Math.max(0, Math.round(next.proteinGoal)),
@@ -95,6 +130,12 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     next.age,
     next.heightCm,
     next.activity,
+    next.goalWeightKg,
+    Math.max(0, Math.round(next.caffeineLimit)),
+    next.theme,
+    next.accent,
+    next.waterReminders ? 1 : 0,
+    next.weekdayGoals ? JSON.stringify(next.weekdayGoals) : null,
   );
 }
 
@@ -109,7 +150,9 @@ export async function clearAllData(): Promise<void> {
     DELETE FROM water;
     DELETE FROM weights;
     DELETE FROM exercise;
+    DELETE FROM caffeine;
+    DELETE FROM checkins;
+    DELETE FROM measurements;
   `);
-  // Drop any reminders that were scheduled for the now-deleted supplements.
   await cancelAllReminders();
 }

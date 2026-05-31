@@ -14,13 +14,15 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Polyline } from 'react-native-svg';
 import { addWeight, deleteWeight, getWeights } from '@/db/weights';
-import { formatDayLabel } from '@/db/dates';
+import { getLatestMeasurement, saveMeasurement } from '@/db/measurements';
+import { formatDayLabel, toDayKey } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
-import { Card, EmptyState, PrimaryButton } from '@/components/ui';
+import { Card, EmptyState, Field, GhostButton, PrimaryButton } from '@/components/ui';
 import { displayToKg, kgToDisplay } from '@/health';
+import { movingAverage } from '@/stats';
 import { successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
-import type { WeightEntry } from '@/types';
+import type { DayMeasurement, WeightEntry } from '@/types';
 
 export default function WeightScreen() {
   const { goals } = useGoals();
@@ -28,9 +30,17 @@ export default function WeightScreen() {
   const [entries, setEntries] = useState<WeightEntry[]>([]);
   const [input, setInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [waist, setWaist] = useState('');
+  const [bodyFat, setBodyFat] = useState('');
+  const [measurement, setMeasurement] = useState<DayMeasurement | null>(null);
+  const [savingM, setSavingM] = useState(false);
 
   const load = useCallback(async () => {
     setEntries(await getWeights());
+    const m = await getLatestMeasurement();
+    setMeasurement(m);
+    setWaist(m?.waistCm ? String(m.waistCm) : '');
+    setBodyFat(m?.bodyFat ? String(m.bodyFat) : '');
   }, []);
 
   useFocusEffect(
@@ -52,6 +62,20 @@ export default function WeightScreen() {
     load();
   };
 
+  const saveMeasurements = async () => {
+    setSavingM(true);
+    const w = Number.parseFloat(waist);
+    const bf = Number.parseFloat(bodyFat);
+    await saveMeasurement(
+      toDayKey(),
+      Number.isFinite(w) && w > 0 ? w : null,
+      Number.isFinite(bf) && bf > 0 ? bf : null,
+    );
+    successFeedback();
+    setSavingM(false);
+    load();
+  };
+
   const confirmDelete = (entry: WeightEntry) => {
     Alert.alert('Delete entry', `Remove the weight from ${formatDayLabel(entry.day)}?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -69,6 +93,31 @@ export default function WeightScreen() {
   const latest = entries.at(-1) ?? null;
   const first = entries[0] ?? null;
   const changeKg = latest && first ? latest.kg - first.kg : 0;
+
+  // Project time-to-goal from the recent rate of change.
+  const goalKg = goals.goalWeightKg;
+  let projection: string | null = null;
+  if (latest && goalKg != null) {
+    const remaining = goalKg - latest.kg;
+    if (Math.abs(remaining) < 0.2) {
+      projection = 'Goal reached 🎉';
+    } else if (entries.length >= 2) {
+      const span = entries.slice(-8);
+      const a = span[0];
+      const b = span[span.length - 1];
+      const days = Math.max(
+        1,
+        Math.round((new Date(b.day).getTime() - new Date(a.day).getTime()) / 86400000),
+      );
+      const ratePerDay = (b.kg - a.kg) / days;
+      if (ratePerDay === 0 || Math.sign(ratePerDay) !== Math.sign(remaining)) {
+        projection = 'Not trending toward goal yet';
+      } else {
+        const weeks = Math.max(1, Math.round(remaining / ratePerDay / 7));
+        projection = `≈ ${weeks} week${weeks === 1 ? '' : 's'} to goal`;
+      }
+    }
+  }
 
   return (
     <KeyboardAvoidingView
@@ -101,6 +150,16 @@ export default function WeightScreen() {
           </View>
         ) : null}
 
+        {goalKg != null ? (
+          <Card style={styles.goalCard}>
+            <Ionicons name="flag" size={18} color={colors.accent} />
+            <Text style={styles.goalText}>
+              Goal {kgToDisplay(goalKg, unit).toFixed(1)} {unit}
+              {projection ? ` · ${projection}` : ''}
+            </Text>
+          </Card>
+        ) : null}
+
         {entries.length >= 2 ? (
           <Card>
             <Text style={styles.chartTitle}>Trend</Text>
@@ -124,6 +183,26 @@ export default function WeightScreen() {
             </View>
           </View>
           <PrimaryButton label="Save weight" onPress={save} disabled={!canSave} loading={saving} />
+        </Card>
+
+        <Card style={styles.logCard}>
+          <Text style={styles.logLabel}>Body measurements</Text>
+          {measurement?.waistCm || measurement?.bodyFat ? (
+            <Text style={styles.measureCurrent}>
+              {measurement.waistCm ? `Waist ${measurement.waistCm} cm` : ''}
+              {measurement.waistCm && measurement.bodyFat ? ' · ' : ''}
+              {measurement.bodyFat ? `Body fat ${measurement.bodyFat}%` : ''}
+            </Text>
+          ) : null}
+          <View style={styles.measureRow}>
+            <View style={styles.measureCell}>
+              <Field label="Waist" value={waist} onChangeText={(t) => setWaist(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix="cm" />
+            </View>
+            <View style={styles.measureCell}>
+              <Field label="Body fat" value={bodyFat} onChangeText={(t) => setBodyFat(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix="%" />
+            </View>
+          </View>
+          <GhostButton label={savingM ? 'Saving…' : 'Save measurements'} onPress={saveMeasurements} />
         </Card>
 
         {entries.length > 0 ? (
@@ -166,16 +245,32 @@ function WeightChart({ entries, unit }: { entries: WeightEntry[]; unit: string }
   const max = Math.max(...values);
   const range = max - min || 1;
 
-  const points = entries.map((e, i) => {
-    const x = pad + (i / (entries.length - 1)) * (width - pad * 2);
-    const y = pad + (1 - (e.kg - min) / range) * (height - pad * 2);
-    return { x, y };
+  const toXY = (kg: number, i: number) => ({
+    x: pad + (i / (entries.length - 1)) * (width - pad * 2),
+    y: pad + (1 - (kg - min) / range) * (height - pad * 2),
   });
+  const points = entries.map((e, i) => toXY(e.kg, i));
   const polyline = points.map((p) => `${p.x},${p.y}`).join(' ');
+
+  // 5-point trailing average, drawn as a faint smoothing line.
+  const avg = movingAverage(values, 5);
+  const avgLine = avg
+    .map((v, i) => (v == null ? null : toXY(v, i)))
+    .filter((p): p is { x: number; y: number } => p !== null)
+    .map((p) => `${p.x},${p.y}`)
+    .join(' ');
 
   return (
     <View style={styles.chartWrap}>
       <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+        <Polyline
+          points={avgLine}
+          fill="none"
+          stroke={colors.textMuted}
+          strokeWidth={1.5}
+          strokeDasharray="4 4"
+          strokeLinejoin="round"
+        />
         <Polyline
           points={polyline}
           fill="none"
@@ -223,8 +318,13 @@ const styles = StyleSheet.create({
   chartWrap: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm },
   chartAxis: { justifyContent: 'space-between', paddingVertical: spacing.sm },
   axisLabel: { color: colors.textMuted, fontSize: 10 },
+  goalCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  goalText: { color: colors.text, fontSize: font.size.sm, fontWeight: font.weight.medium, flex: 1 },
   logCard: { gap: spacing.md },
   logLabel: { color: colors.text, fontSize: font.size.md, fontWeight: font.weight.semibold },
+  measureCurrent: { color: colors.textMuted, fontSize: font.size.sm },
+  measureRow: { flexDirection: 'row', gap: spacing.sm },
+  measureCell: { flex: 1 },
   logRow: { flexDirection: 'row' },
   inputWrap: {
     flex: 1,

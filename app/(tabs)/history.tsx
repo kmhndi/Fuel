@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Polyline } from 'react-native-svg';
 import { getDailyTotals } from '@/db/meals';
 import { getDailyAdherence, getRecentAdherence } from '@/db/supplements';
 import { getWaterTotals } from '@/db/water';
@@ -9,6 +10,7 @@ import { getLatestWeight } from '@/db/weights';
 import { useGoals } from '@/state/GoalsContext';
 import { Card, EmptyState, SegmentedControl } from '@/components/ui';
 import { kgToDisplay } from '@/health';
+import { movingAverage } from '@/stats';
 import { macroColors } from '@/nutrition';
 import { tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
@@ -114,7 +116,27 @@ export default function TrendsScreen() {
                   />
                 </View>
               ))}
+              {totals.length >= 3 ? (
+                <Svg
+                  style={StyleSheet.absoluteFill}
+                  preserveAspectRatio="none"
+                  viewBox={`0 0 ${totals.length} 100`}
+                  pointerEvents="none"
+                >
+                  <Polyline
+                    points={movingAverage(totals.map((t) => t.calories), 7)
+                      .map((v, i) => (v == null ? null : `${i + 0.5},${100 - (v / maxCalories) * 100}`))
+                      .filter(Boolean)
+                      .join(' ')}
+                    fill="none"
+                    stroke={colors.text}
+                    strokeWidth={0.6}
+                    strokeOpacity={0.55}
+                  />
+                </Svg>
+              ) : null}
             </View>
+            <Text style={styles.maLegend}>White line = 7-day average</Text>
           </Card>
 
           {dots.some((d) => d.total > 0) ? (
@@ -219,6 +241,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   barFill: { width: '100%', borderRadius: radius.sm, minHeight: 2 },
+  maLegend: { color: colors.textMuted, fontSize: font.size.xs, marginTop: spacing.sm },
   dots: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: spacing.md },
   dot: { width: 14, height: 14, borderRadius: 4 },
   linkCard: {

@@ -28,6 +28,7 @@ import {
   SegmentedControl,
 } from '@/components/ui';
 import { caloriesFromMacros, macroColors } from '@/nutrition';
+import { displayToKg, kgToDisplay } from '@/health';
 import { successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 import type { WeightUnit } from '@/types';
@@ -43,6 +44,8 @@ export default function SettingsScreen() {
   const [waterGoal, setWaterGoal] = useState('');
   const [glassMl, setGlassMl] = useState('');
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
+  const [goalWeight, setGoalWeight] = useState('');
+  const [caffeineLimit, setCaffeineLimit] = useState('');
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notifGranted, setNotifGranted] = useState(true);
@@ -56,6 +59,8 @@ export default function SettingsScreen() {
       setWaterGoal(String(g.waterGoal));
       setGlassMl(String(g.glassMl));
       setWeightUnit(g.weightUnit);
+      setGoalWeight(g.goalWeightKg != null ? kgToDisplay(g.goalWeightKg, g.weightUnit).toFixed(1) : '');
+      setCaffeineLimit(String(g.caffeineLimit));
     });
   }, []);
 
@@ -79,6 +84,7 @@ export default function SettingsScreen() {
 
   const save = async () => {
     setSaving(true);
+    const gw = Number.parseFloat(goalWeight);
     await saveGoals({
       calorieGoal: int(calorieGoal),
       proteinGoal: int(proteinGoal),
@@ -87,6 +93,8 @@ export default function SettingsScreen() {
       waterGoal: Math.max(1, int(waterGoal)),
       glassMl: Math.max(50, int(glassMl)),
       weightUnit,
+      goalWeightKg: Number.isFinite(gw) && gw > 0 ? displayToKg(gw, weightUnit) : null,
+      caffeineLimit: Math.max(0, int(caffeineLimit)),
     });
     await refresh();
     successFeedback();
@@ -227,6 +235,16 @@ export default function SettingsScreen() {
               { value: 'lb', label: 'Pounds' },
             ]}
           />
+        </Card>
+
+        <Text style={styles.sectionTitle}>Targets</Text>
+        <Card style={styles.row}>
+          <View style={styles.cell}>
+            <Field label="Goal weight" value={goalWeight} onChangeText={(t) => setGoalWeight(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix={weightUnit} />
+          </View>
+          <View style={styles.cell}>
+            <Field label="Caffeine limit" value={caffeineLimit} onChangeText={(t) => setCaffeineLimit(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="mg" />
+          </View>
         </Card>
 
         <Text style={styles.sectionTitle}>Notifications</Text>

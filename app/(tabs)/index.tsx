@@ -21,6 +21,7 @@ import {
 } from '@/db/meals';
 import { getExerciseTotal } from '@/db/exercise';
 import { adjustWater, getWater } from '@/db/water';
+import { addCaffeine, clearCaffeine, getCaffeine } from '@/db/caffeine';
 import {
   formatDayLabel,
   isFuture,
@@ -33,6 +34,7 @@ import { useGoals } from '@/state/GoalsContext';
 import { ProgressRing } from '@/components/ProgressRing';
 import { MacroBars } from '@/components/MacroBars';
 import { WaterCard } from '@/components/WaterCard';
+import { CaffeineCard } from '@/components/CaffeineCard';
 import { Celebration } from '@/components/Celebration';
 import { Card, EmptyState } from '@/components/ui';
 import { mealTypeMeta } from '@/nutrition';
@@ -65,22 +67,25 @@ export default function TodayScreen() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [summary, setSummary] = useState<DaySummary>(EMPTY_SUMMARY);
   const [water, setWater] = useState(0);
+  const [caffeine, setCaffeine] = useState(0);
   const [exercise, setExercise] = useState(0);
   const [streak, setStreak] = useState(0);
   const [celebrate, setCelebrate] = useState(false);
 
   const load = useCallback(async () => {
-    const [dayMeals, daySummary, glasses, burned, loggedDays] =
+    const [dayMeals, daySummary, glasses, mg, burned, loggedDays] =
       await Promise.all([
         getMealsForDay(day),
         getDaySummary(day),
         getWater(day),
+        getCaffeine(day),
         getExerciseTotal(day),
         getLoggedDays(60),
       ]);
     setMeals(dayMeals);
     setSummary(daySummary);
     setWater(glasses);
+    setCaffeine(mg);
     setExercise(burned);
     setStreak(streakFromDays(loggedDays));
   }, [day]);
@@ -228,6 +233,18 @@ export default function TodayScreen() {
               onAdd={onAddWater}
               onRemove={onRemoveWater}
             />
+
+            <View style={styles.cardGap}>
+              <CaffeineCard
+                mg={caffeine}
+                limit={goals.caffeineLimit}
+                onAdd={async (mg) => setCaffeine(await addCaffeine(day, mg))}
+                onReset={async () => {
+                  await clearCaffeine(day);
+                  setCaffeine(0);
+                }}
+              />
+            </View>
           </View>
         }
         renderSectionHeader={({ section }) => (
@@ -426,9 +443,16 @@ function MealRow({
       style={({ pressed }) => [styles.mealRow, pressed && styles.rowPressed]}
     >
       <View style={styles.mealInfo}>
-        <Text style={styles.mealName} numberOfLines={1}>
-          {meal.name}
-        </Text>
+        <View style={styles.mealNameRow}>
+          <Text style={styles.mealName} numberOfLines={1}>
+            {meal.name}
+          </Text>
+          {meal.tag ? (
+            <View style={styles.tagPill}>
+              <Text style={styles.tagPillText}>{meal.tag}</Text>
+            </View>
+          ) : null}
+        </View>
         {meal.note ? (
           <Text style={styles.mealNote} numberOfLines={1}>
             {meal.note}
@@ -503,6 +527,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   insightText: { color: colors.text, fontSize: font.size.sm, fontWeight: font.weight.medium },
+  cardGap: { marginTop: spacing.md },
   quickActions: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   quickAction: {
     flex: 1,
@@ -547,7 +572,15 @@ const styles = StyleSheet.create({
   },
   rowPressed: { opacity: 0.7 },
   mealInfo: { flex: 1, marginRight: spacing.md, gap: 2 },
-  mealName: { color: colors.text, fontSize: font.size.md, fontWeight: font.weight.medium },
+  mealNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  mealName: { color: colors.text, fontSize: font.size.md, fontWeight: font.weight.medium, flexShrink: 1 },
+  tagPill: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 1,
+  },
+  tagPillText: { color: colors.textMuted, fontSize: 10, fontWeight: font.weight.medium },
   mealMacros: { color: colors.textMuted, fontSize: font.size.xs },
   mealNote: { color: colors.textMuted, fontSize: font.size.xs, fontStyle: 'italic' },
   mealCalories: { color: colors.accent, fontSize: font.size.md, fontWeight: font.weight.semibold },

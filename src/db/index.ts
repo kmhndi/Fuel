@@ -116,6 +116,49 @@ const MIGRATIONS: string[] = [
     ALTER TABLE settings ADD COLUMN height_cm REAL;
     ALTER TABLE settings ADD COLUMN activity REAL NOT NULL DEFAULT 1.2;
   `,
+  // 3 -> 4: extra nutrition fields & tags, caffeine, daily check-ins, body
+  // measurements, custom quick-add presets, and assorted settings for goal
+  // weight, caffeine limit, theme/accent, water reminders and weekday goals.
+  `
+    ALTER TABLE meals ADD COLUMN fiber REAL NOT NULL DEFAULT 0;
+    ALTER TABLE meals ADD COLUMN sugar REAL NOT NULL DEFAULT 0;
+    ALTER TABLE meals ADD COLUMN tag TEXT;
+
+    CREATE TABLE IF NOT EXISTS caffeine (
+      day TEXT PRIMARY KEY NOT NULL,
+      mg INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS checkins (
+      day TEXT PRIMARY KEY NOT NULL,
+      mood INTEGER,
+      energy INTEGER,
+      note TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS measurements (
+      day TEXT PRIMARY KEY NOT NULL,
+      waist_cm REAL,
+      body_fat REAL
+    );
+
+    CREATE TABLE IF NOT EXISTS presets (
+      id INTEGER PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      calories INTEGER NOT NULL,
+      protein REAL NOT NULL DEFAULT 0,
+      carbs REAL NOT NULL DEFAULT 0,
+      fat REAL NOT NULL DEFAULT 0,
+      sort INTEGER NOT NULL DEFAULT 0
+    );
+
+    ALTER TABLE settings ADD COLUMN goal_weight_kg REAL;
+    ALTER TABLE settings ADD COLUMN caffeine_limit INTEGER NOT NULL DEFAULT 400;
+    ALTER TABLE settings ADD COLUMN theme TEXT NOT NULL DEFAULT 'dark';
+    ALTER TABLE settings ADD COLUMN accent TEXT NOT NULL DEFAULT '#22D3A7';
+    ALTER TABLE settings ADD COLUMN water_reminders INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE settings ADD COLUMN weekday_goals TEXT;
+  `,
 ];
 
 /**

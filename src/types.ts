@@ -22,13 +22,43 @@ export interface Meal extends Macros {
   name: string;
   calories: number;
   mealType: MealType;
+  /** Optional fiber/sugar grams (subset of carbs). */
+  fiber: number;
+  sugar: number;
   /** Optional free-text note (e.g. "felt too salty"). */
   note: string | null;
+  /** Optional label, e.g. "homemade" or "eating out". */
+  tag: string | null;
   /** ISO timestamp of when the meal was logged. */
   loggedAt: string;
   /** Local calendar day in YYYY-MM-DD form, used for daily grouping. */
   day: string;
 }
+
+/** A user-defined one-tap quick-add food. */
+export interface Preset extends Macros {
+  id: number;
+  name: string;
+  calories: number;
+  sort: number;
+}
+
+/** A daily mood/energy check-in (1–5 scales). */
+export interface CheckIn {
+  day: string;
+  mood: number | null;
+  energy: number | null;
+  note: string | null;
+}
+
+/** Optional body measurements for a day. */
+export interface DayMeasurement {
+  day: string;
+  waistCm: number | null;
+  bodyFat: number | null;
+}
+
+export type ThemeMode = 'dark' | 'light';
 
 /** A logged bout of exercise whose calories add back to the daily budget. */
 export interface Exercise {
@@ -101,6 +131,20 @@ export interface Goals {
   age: number | null;
   heightCm: number | null;
   activity: number;
+  /** Optional target body weight in kg. */
+  goalWeightKg: number | null;
+  /** Daily caffeine limit in mg. */
+  caffeineLimit: number;
+  theme: ThemeMode;
+  /** Accent color hex. */
+  accent: string;
+  /** Whether interval water reminders are enabled. */
+  waterReminders: boolean;
+  /**
+   * Optional per-weekday calorie overrides, indexed 0=Sunday..6=Saturday.
+   * A null entry (or null array) falls back to `calorieGoal`.
+   */
+  weekdayGoals: (number | null)[] | null;
   onboarded: boolean;
 }
 
@@ -108,7 +152,10 @@ export interface NewMeal extends Macros {
   name: string;
   calories: number;
   mealType: MealType;
+  fiber?: number;
+  sugar?: number;
   note?: string | null;
+  tag?: string | null;
 }
 
 export type NewSupplement = Pick<
