@@ -48,6 +48,13 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return status === 'granted';
 }
 
+/** Whether notification permission is currently granted. */
+export async function getPermissionGranted(): Promise<boolean> {
+  if (!Device.isDevice) return false;
+  const { status } = await Notifications.getPermissionsAsync();
+  return status === 'granted';
+}
+
 /**
  * Schedule a daily repeating reminder and return its identifier so it can be
  * cancelled later. The caller is responsible for persisting the id.
@@ -74,6 +81,15 @@ export async function scheduleDailyReminder(
       minute,
     },
   });
+}
+
+/** Cancel every scheduled reminder (used when wiping all data). */
+export async function cancelAllReminders(): Promise<void> {
+  try {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch {
+    // No scheduler available (e.g. web) — nothing to cancel.
+  }
 }
 
 /** Cancel a previously scheduled reminder, ignoring unknown ids. */

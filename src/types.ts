@@ -1,14 +1,44 @@
 /** Shared domain types for Fuel. */
 
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export const MEAL_TYPES: MealType[] = [
+  'breakfast',
+  'lunch',
+  'dinner',
+  'snack',
+];
+
+/** Macronutrient grams. */
+export interface Macros {
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 /** A single logged food/meal entry. */
-export interface Meal {
+export interface Meal extends Macros {
   id: number;
   name: string;
   calories: number;
+  mealType: MealType;
   /** ISO timestamp of when the meal was logged. */
   loggedAt: string;
   /** Local calendar day in YYYY-MM-DD form, used for daily grouping. */
   day: string;
+}
+
+/**
+ * A reusable food in the library, accumulated from logged meals so common
+ * items can be re-added with a single tap.
+ */
+export interface Food extends Macros {
+  id: number;
+  name: string;
+  calories: number;
+  isFavorite: boolean;
+  useCount: number;
+  lastUsedAt: string;
 }
 
 /** A supplement the user wants to be reminded to take. */
@@ -27,7 +57,27 @@ export interface Supplement {
   notificationId: string | null;
 }
 
-export type NewMeal = Pick<Meal, 'name' | 'calories'>;
+/** A supplement plus today's adherence + streak, for the daily checklist. */
+export interface SupplementStatus extends Supplement {
+  takenToday: boolean;
+  /** Consecutive days (ending today or yesterday) the supplement was taken. */
+  streak: number;
+}
+
+/** Daily targets the user is tracking against. */
+export interface Goals {
+  calorieGoal: number;
+  proteinGoal: number;
+  carbGoal: number;
+  fatGoal: number;
+  onboarded: boolean;
+}
+
+export interface NewMeal extends Macros {
+  name: string;
+  calories: number;
+  mealType: MealType;
+}
 
 export type NewSupplement = Pick<
   Supplement,

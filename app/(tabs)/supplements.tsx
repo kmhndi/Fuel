@@ -4,7 +4,6 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from 'react-native';
@@ -13,21 +12,23 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   deleteSupplement,
-  getSupplements,
+  getSupplementsWithStatus,
   setSupplementEnabled,
+  setTaken,
 } from '@/db/supplements';
 import { formatTime } from '@/db/dates';
-import { EmptyState } from '@/components/ui';
+import { Card, EmptyState } from '@/components/ui';
+import { selectionFeedback, successFeedback, tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
-import type { Supplement } from '@/types';
+import type { Supplement, SupplementStatus } from '@/types';
 
 export default function SupplementsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [supplements, setSupplements] = useState<Supplement[]>([]);
+  const [items, setItems] = useState<SupplementStatus[]>([]);
 
   const load = useCallback(async () => {
-    setSupplements(await getSupplements());
+    setItems(await getSupplementsWithStatus());
   }, []);
 
   useFocusEffect(
@@ -36,58 +37,92 @@ export default function SupplementsScreen() {
     }, [load]),
   );
 
-  const toggle = useCallback(async (supplement: Supplement, value: boolean) => {
-    // Optimistically reflect the switch, then persist + (un)schedule.
-    setSupplements((prev) =>
-      prev.map((s) => (s.id === supplement.id ? { ...s, enabled: value } : s)),
-    );
-    const updated = await setSupplementEnabled(supplement, value);
-    setSupplements((prev) =>
-      prev.map((s) => (s.id === updated.id ? updated : s)),
-    );
-  }, []);
-
-  const confirmDelete = useCallback(
-    (supplement: Supplement) => {
-      Alert.alert('Delete supplement', `Stop tracking "${supplement.name}"?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteSupplement(supplement);
-            load();
-          },
-        },
-      ]);
+  const toggleTaken = useCallback(
+    async (item: SupplementStatus) => {
+      const next = !item.takenToday;
+      if (next) successFeedback();
+      else selectionFeedback();
+      // Optimistic update, then persist and reconcile (streak may change).
+      setItems((prev) =>
+        prev.map((s) =>
+          s.id === item.id ? { ...s, takenToday: next } : s,
+        ),
+      );
+      await setTaken(item.id, next);
+      load();
     },
     [load],
   );
 
+  const toggleReminder = useCallback(
+    async (item: SupplementStatus) => {
+      tapFeedback();
+      const updated = await setSupplementEnabled(item, !item.enabled);
+      setItems((prev) =>
+        prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)),
+      );
+    },
+    [],
+  );
+
+  const confirmDelete = useCallback(
+    (item: Supplement) => {
+      Alert.alert(
+        'Delete supplement',
+        `Stop tracking "${item.name}"? This also clears its history.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              await deleteSupplement(item);
+              load();
+            },
+          },
+        ],
+      );
+    },
+    [load],
+  );
+
+  const takenCount = items.filter((s) => s.takenToday).length;
+
   return (
     <View style={styles.container}>
       <FlatList
-        data={supplements}
+        data={items}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          items.length > 0 ? (
+            <SummaryCard taken={takenCount} total={items.length} />
+          ) : null
+        }
         renderItem={({ item }) => (
           <SupplementRow
-            supplement={item}
-            onToggle={(value) => toggle(item, value)}
+            item={item}
+            onToggleTaken={() => toggleTaken(item)}
+            onToggleReminder={() => toggleReminder(item)}
             onLongPress={() => confirmDelete(item)}
           />
         )}
         ListEmptyComponent={
           <EmptyState
-            icon={<Ionicons name="medkit-outline" size={40} color={colors.textMuted} />}
+            icon={
+              <Ionicons name="medkit-outline" size={40} color={colors.textMuted} />
+            }
             title="No supplements yet"
-            subtitle="Add a supplement and Fuel will remind you to take it at the same time every day."
+            subtitle="Add a supplement to get a daily reminder, then check it off to build a streak."
           />
         }
       />
 
       <Pressable
-        onPress={() => router.push('/add-supplement')}
+        onPress={() => {
+          tapFeedback();
+          router.push('/add-supplement');
+        }}
         style={({ pressed }) => [
           styles.fab,
           { bottom: insets.bottom + spacing.lg },
@@ -101,49 +136,78 @@ export default function SupplementsScreen() {
   );
 }
 
+function SummaryCard({ taken, total }: { taken: number; total: number }) {
+  const pct = total > 0 ? taken / total : 0;
+  const allDone = taken === total && total > 0;
+  return (
+    <Card style={styles.summary}>
+      <View style={styles.summaryHeader}>
+        <Text style={styles.summaryTitle}>Today</Text>
+        <Text style={[styles.summaryCount, allDone && { color: colors.accent }]}>
+          {taken} of {total} taken
+        </Text>
+      </View>
+      <View style={styles.summaryTrack}>
+        <View style={[styles.summaryFill, { width: `${pct * 100}%` }]} />
+      </View>
+      {allDone ? (
+        <Text style={styles.summaryDone}>All caught up — nice. 🎉</Text>
+      ) : null}
+    </Card>
+  );
+}
+
 function SupplementRow({
-  supplement,
-  onToggle,
+  item,
+  onToggleTaken,
+  onToggleReminder,
   onLongPress,
 }: {
-  supplement: Supplement;
-  onToggle: (value: boolean) => void;
+  item: SupplementStatus;
+  onToggleTaken: () => void;
+  onToggleReminder: () => void;
   onLongPress: () => void;
 }) {
   return (
     <Pressable
+      onPress={onToggleTaken}
       onLongPress={onLongPress}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
+      <View style={[styles.check, item.takenToday && styles.checkOn]}>
+        {item.takenToday ? (
+          <Ionicons name="checkmark" size={20} color={colors.bg} />
+        ) : null}
+      </View>
+
       <View style={styles.rowInfo}>
-        <Text style={styles.name} numberOfLines={1}>
-          {supplement.name}
+        <Text
+          style={[styles.name, item.takenToday && styles.nameTaken]}
+          numberOfLines={1}
+        >
+          {item.name}
         </Text>
         <View style={styles.metaRow}>
           <Ionicons
-            name="alarm-outline"
-            size={14}
-            color={supplement.enabled ? colors.accent : colors.textMuted}
+            name={item.enabled ? 'alarm' : 'alarm-outline'}
+            size={13}
+            color={item.enabled ? colors.accent : colors.textMuted}
           />
-          <Text
-            style={[
-              styles.time,
-              { color: supplement.enabled ? colors.accent : colors.textMuted },
-            ]}
-          >
-            {formatTime(supplement.hour, supplement.minute)}
-          </Text>
-          {supplement.dose ? (
-            <Text style={styles.dose}> · {supplement.dose}</Text>
+          <Text style={styles.meta}>{formatTime(item.hour, item.minute)}</Text>
+          {item.dose ? <Text style={styles.meta}>· {item.dose}</Text> : null}
+          {item.streak > 0 ? (
+            <Text style={styles.streak}>🔥 {item.streak}</Text>
           ) : null}
         </View>
       </View>
-      <Switch
-        value={supplement.enabled}
-        onValueChange={onToggle}
-        trackColor={{ false: colors.surfaceAlt, true: colors.accentDim }}
-        thumbColor={supplement.enabled ? colors.accent : colors.textMuted}
-      />
+
+      <Pressable onPress={onToggleReminder} hitSlop={10} style={styles.bell}>
+        <Ionicons
+          name={item.enabled ? 'notifications' : 'notifications-off-outline'}
+          size={20}
+          color={item.enabled ? colors.accent : colors.textMuted}
+        />
+      </Pressable>
     </Pressable>
   );
 }
@@ -158,10 +222,45 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
     gap: spacing.sm,
   },
+  summary: {
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+  summaryTitle: {
+    color: colors.text,
+    fontSize: font.size.lg,
+    fontWeight: font.weight.bold,
+  },
+  summaryCount: {
+    color: colors.textMuted,
+    fontSize: font.size.sm,
+    fontWeight: font.weight.medium,
+  },
+  summaryTrack: {
+    height: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
+    overflow: 'hidden',
+  },
+  summaryFill: {
+    height: '100%',
+    borderRadius: radius.pill,
+    backgroundColor: colors.accent,
+  },
+  summaryDone: {
+    color: colors.accent,
+    fontSize: font.size.sm,
+    fontWeight: font.weight.medium,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
@@ -172,9 +271,21 @@ const styles = StyleSheet.create({
   rowPressed: {
     opacity: 0.7,
   },
+  check: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkOn: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
   rowInfo: {
     flex: 1,
-    marginRight: spacing.md,
     gap: spacing.xs,
   },
   name: {
@@ -182,18 +293,28 @@ const styles = StyleSheet.create({
     fontSize: font.size.md,
     fontWeight: font.weight.semibold,
   },
+  nameTaken: {
+    color: colors.textMuted,
+    textDecorationLine: 'line-through',
+  },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    flexWrap: 'wrap',
   },
-  time: {
-    fontSize: font.size.sm,
-    fontWeight: font.weight.medium,
-  },
-  dose: {
+  meta: {
     color: colors.textMuted,
     fontSize: font.size.sm,
+  },
+  streak: {
+    color: colors.warning,
+    fontSize: font.size.sm,
+    fontWeight: font.weight.semibold,
+    marginLeft: spacing.xs,
+  },
+  bell: {
+    padding: spacing.xs,
   },
   fab: {
     position: 'absolute',

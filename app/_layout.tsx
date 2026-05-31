@@ -8,6 +8,7 @@ import {
   ensureAndroidChannel,
   requestNotificationPermission,
 } from '@/notifications';
+import { GoalsProvider } from '@/state/GoalsContext';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -35,7 +36,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <GoalsProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -54,7 +55,11 @@ export default function RootLayout() {
           name="add-supplement"
           options={{ presentation: 'modal', title: 'New supplement' }}
         />
+        <Stack.Screen
+          name="settings"
+          options={{ presentation: 'modal', title: 'Goals & settings' }}
+        />
       </Stack>
-    </>
+    </GoalsProvider>
   );
 }

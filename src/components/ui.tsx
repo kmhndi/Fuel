@@ -4,10 +4,13 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
   type StyleProp,
+  type TextInputProps,
   type ViewStyle,
 } from 'react-native';
+import { selectionFeedback } from '../haptics';
 import { colors, font, radius, spacing } from '../theme';
 
 /** A rounded surface used to group related content. */
@@ -53,6 +56,93 @@ export function PrimaryButton({
   );
 }
 
+/** Low-emphasis text button, e.g. destructive or secondary actions. */
+export function GhostButton({
+  label,
+  onPress,
+  tone = 'muted',
+}: {
+  label: string;
+  onPress: () => void;
+  tone?: 'muted' | 'danger';
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.ghostButton, pressed && styles.buttonPressed]}
+    >
+      <Text
+        style={[
+          styles.ghostLabel,
+          { color: tone === 'danger' ? colors.danger : colors.textMuted },
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** Labeled text field used across the modal forms. */
+export function Field({
+  label,
+  suffix,
+  style,
+  ...inputProps
+}: TextInputProps & { label: string; suffix?: string }) {
+  return (
+    <View style={styles.fieldGroup}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={styles.fieldRow}>
+        <TextInput
+          placeholderTextColor={colors.textMuted}
+          style={[styles.fieldInput, style]}
+          {...inputProps}
+        />
+        {suffix ? <Text style={styles.fieldSuffix}>{suffix}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+/** A horizontal pill selector for a small set of options. */
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <View style={styles.segment}>
+      {options.map((opt) => {
+        const active = opt.value === value;
+        return (
+          <Pressable
+            key={opt.value}
+            onPress={() => {
+              selectionFeedback();
+              onChange(opt.value);
+            }}
+            style={[styles.segmentItem, active && styles.segmentItemActive]}
+          >
+            <Text
+              style={[
+                styles.segmentLabel,
+                active && styles.segmentLabelActive,
+              ]}
+            >
+              {opt.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 /** Shown when a list has no items yet. */
 export function EmptyState({
   icon,
@@ -94,11 +184,75 @@ const styles = StyleSheet.create({
     fontSize: font.size.md,
     fontWeight: font.weight.bold,
   },
+  ghostButton: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+  },
+  ghostLabel: {
+    fontSize: font.size.md,
+    fontWeight: font.weight.medium,
+  },
   buttonDisabled: {
     opacity: 0.45,
   },
   buttonPressed: {
     opacity: 0.85,
+  },
+  fieldGroup: {
+    gap: spacing.xs,
+  },
+  fieldLabel: {
+    color: colors.textMuted,
+    fontSize: font.size.sm,
+    fontWeight: font.weight.medium,
+  },
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+  },
+  fieldInput: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    color: colors.text,
+    fontSize: font.size.lg,
+  },
+  fieldSuffix: {
+    color: colors.textMuted,
+    fontSize: font.size.md,
+    marginLeft: spacing.sm,
+  },
+  segment: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    padding: spacing.xs,
+    gap: spacing.xs,
+  },
+  segmentItem: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+  },
+  segmentItemActive: {
+    backgroundColor: colors.accent,
+  },
+  segmentLabel: {
+    color: colors.textMuted,
+    fontSize: font.size.sm,
+    fontWeight: font.weight.medium,
+  },
+  segmentLabelActive: {
+    color: colors.bg,
+    fontWeight: font.weight.bold,
   },
   empty: {
     alignItems: 'center',

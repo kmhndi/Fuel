@@ -1,6 +1,7 @@
-import { Tabs } from 'expo-router';
+import { Pressable } from 'react-native';
+import { Link, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme';
+import { colors, spacing } from '@/theme';
 
 export default function TabsLayout() {
   return (
@@ -26,6 +27,19 @@ export default function TabsLayout() {
           tabBarLabel: 'Today',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flame" color={color} size={size} />
+          ),
+          headerRight: () => (
+            <Link href="/settings" asChild>
+              <Pressable hitSlop={12} style={{ marginRight: spacing.lg }}>
+                {({ pressed }) => (
+                  <Ionicons
+                    name="settings-outline"
+                    size={22}
+                    color={pressed ? colors.accent : colors.text}
+                  />
+                )}
+              </Pressable>
+            </Link>
           ),
         }}
       />

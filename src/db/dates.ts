@@ -28,6 +28,24 @@ export function formatDayLabel(dayKey: string): string {
   });
 }
 
+/** The day key `offset` days away from `dayKey` (negative = earlier). */
+export function shiftDay(dayKey: string, offset: number): string {
+  const [y, m, d] = dayKey.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + offset);
+  return toDayKey(date);
+}
+
+/** Whether a day key refers to today. */
+export function isToday(dayKey: string): boolean {
+  return dayKey === toDayKey();
+}
+
+/** Whether a day key is in the future (used to cap forward navigation). */
+export function isFuture(dayKey: string): boolean {
+  return dayKey > toDayKey();
+}
+
 /** Format an hour/minute pair as a localized time, e.g. "8:30 AM". */
 export function formatTime(hour: number, minute: number): string {
   const d = new Date();
