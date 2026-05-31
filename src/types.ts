@@ -100,14 +100,18 @@ export interface Supplement {
   name: string;
   /** Optional dose note, e.g. "1000 IU" or "2 capsules". */
   dose: string | null;
-  /** Reminder time of day, 0-23. */
+  /** Primary reminder time of day. */
   hour: number;
-  /** Reminder time of day, 0-59. */
   minute: number;
-  /** Whether the daily reminder is active. */
+  /** Optional second daily reminder time (null = none). */
+  hour2: number | null;
+  minute2: number | null;
+  /** Days the reminder fires (0=Sun..6=Sat); null = every day. */
+  weekdays: number[] | null;
+  /** Whether reminders are active. */
   enabled: boolean;
-  /** expo-notifications identifier for the scheduled reminder, if any. */
-  notificationId: string | null;
+  /** expo-notifications identifiers for all scheduled reminders. */
+  notificationIds: string[];
   /** Doses remaining, or null if inventory isn't tracked. */
   stock: number | null;
   /** Warn when stock falls to or below this (0 = no threshold). */
@@ -166,6 +170,9 @@ export type NewSupplement = Pick<
   Supplement,
   'name' | 'dose' | 'hour' | 'minute'
 > & {
+  hour2?: number | null;
+  minute2?: number | null;
+  weekdays?: number[] | null;
   stock?: number | null;
   refillAt?: number;
 };

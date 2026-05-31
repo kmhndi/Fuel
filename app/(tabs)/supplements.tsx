@@ -233,7 +233,13 @@ function SupplementRow({
             size={13}
             color={item.enabled ? colors.accent : colors.textMuted}
           />
-          <Text style={styles.meta}>{formatTime(item.hour, item.minute)}</Text>
+          <Text style={styles.meta}>
+            {formatTime(item.hour, item.minute)}
+            {item.hour2 != null && item.minute2 != null
+              ? ` & ${formatTime(item.hour2, item.minute2)}`
+              : ''}
+          </Text>
+          {item.weekdays ? <Text style={styles.meta}>· {item.weekdays.length}×/wk</Text> : null}
           {item.dose ? <Text style={styles.meta}>· {item.dose}</Text> : null}
           {item.streak > 0 ? (
             <Text style={styles.streak}>🔥 {item.streak}</Text>

@@ -164,6 +164,14 @@ const MIGRATIONS: string[] = [
     ALTER TABLE supplements ADD COLUMN stock INTEGER;
     ALTER TABLE supplements ADD COLUMN refill_at INTEGER NOT NULL DEFAULT 0;
   `,
+  // 5 -> 6: recurring (weekday) reminders, an optional second daily time, and
+  // storage for the multiple scheduled notification ids that implies.
+  `
+    ALTER TABLE supplements ADD COLUMN weekdays TEXT;
+    ALTER TABLE supplements ADD COLUMN hour2 INTEGER;
+    ALTER TABLE supplements ADD COLUMN minute2 INTEGER;
+    ALTER TABLE supplements ADD COLUMN notification_ids TEXT;
+  `,
 ];
 
 /**

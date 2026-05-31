@@ -43,6 +43,14 @@ export default function AddSupplementScreen() {
     return d;
   });
   const [showPicker, setShowPicker] = useState(Platform.OS === 'ios');
+  const [weekdays, setWeekdays] = useState<number[]>([]); // empty = every day
+  const [secondEnabled, setSecondEnabled] = useState(false);
+  const [time2, setTime2] = useState(() => {
+    const d = new Date();
+    d.setHours(20, 0, 0, 0);
+    return d;
+  });
+  const [showPicker2, setShowPicker2] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -59,6 +67,13 @@ export default function AddSupplementScreen() {
         const d = new Date();
         d.setHours(s.hour, s.minute, 0, 0);
         setTime(d);
+        setWeekdays(s.weekdays ?? []);
+        if (s.hour2 != null && s.minute2 != null) {
+          setSecondEnabled(true);
+          const d2 = new Date();
+          d2.setHours(s.hour2, s.minute2, 0, 0);
+          setTime2(d2);
+        }
       });
     }
   }, [editingId, isEditing, navigation]);
@@ -70,6 +85,14 @@ export default function AddSupplementScreen() {
     if (event.type === 'set' && selected) setTime(selected);
   };
 
+  const onTime2Change = (event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') setShowPicker2(false);
+    if (event.type === 'set' && selected) setTime2(selected);
+  };
+
+  const toggleWeekday = (d: number) =>
+    setWeekdays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+
   const save = async () => {
     if (!canSave || saving) return;
     setSaving(true);
@@ -80,6 +103,10 @@ export default function AddSupplementScreen() {
         dose: dose.trim() || null,
         hour: time.getHours(),
         minute: time.getMinutes(),
+        hour2: secondEnabled ? time2.getHours() : null,
+        minute2: secondEnabled ? time2.getMinutes() : null,
+        // Empty or full selection means "every day".
+        weekdays: weekdays.length > 0 && weekdays.length < 7 ? [...weekdays].sort() : null,
         stock: Number.isFinite(stockNum) && stock !== '' ? Math.max(0, stockNum) : null,
         refillAt: Math.max(0, Number.parseInt(refillAt, 10) || 0),
       };
@@ -87,7 +114,7 @@ export default function AddSupplementScreen() {
         await updateSupplement(editingId, input);
       } else {
         const created = await addSupplement(input);
-        if (!created.notificationId) {
+        if (created.notificationIds.length === 0) {
           Alert.alert(
             'Reminder not scheduled',
             'The supplement was saved, but notifications are turned off. Enable notifications for Fuel in your device settings to get reminders.',
@@ -176,6 +203,69 @@ export default function AddSupplementScreen() {
             />
           </View>
         )}
+
+        <Text style={styles.label}>Repeat on</Text>
+        <View style={styles.weekdays}>
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => {
+            const on = weekdays.length === 0 || weekdays.includes(i);
+            return (
+              <Pressable
+                key={i}
+                onPress={() => toggleWeekday(i)}
+                style={[styles.weekday, on && styles.weekdayOn]}
+              >
+                <Text style={[styles.weekdayText, on && styles.weekdayTextOn]}>{d}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={styles.repeatHint}>
+          {weekdays.length === 0 || weekdays.length === 7 ? 'Every day' : 'Selected days only'}
+        </Text>
+
+        <Pressable
+          onPress={() => {
+            setSecondEnabled((v) => {
+              const next = !v;
+              if (next && Platform.OS === 'ios') setShowPicker2(true);
+              return next;
+            });
+          }}
+          style={styles.secondToggle}
+        >
+          <Ionicons
+            name={secondEnabled ? 'checkbox' : 'square-outline'}
+            size={20}
+            color={secondEnabled ? colors.accent : colors.textMuted}
+          />
+          <Text style={styles.secondLabel}>Add a second daily reminder</Text>
+        </Pressable>
+        {secondEnabled ? (
+          <>
+            {Platform.OS === 'android' && (
+              <Pressable
+                onPress={() => setShowPicker2(true)}
+                style={({ pressed }) => [styles.timeButton, pressed && styles.timeButtonPressed]}
+              >
+                <Ionicons name="alarm-outline" size={20} color={colors.accent} />
+                <Text style={styles.timeButtonText}>
+                  {formatTime(time2.getHours(), time2.getMinutes())}
+                </Text>
+              </Pressable>
+            )}
+            {showPicker2 && (
+              <View style={styles.pickerWrap}>
+                <DateTimePicker
+                  value={time2}
+                  mode="time"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={onTime2Change}
+                  themeVariant="dark"
+                />
+              </View>
+            )}
+          </>
+        ) : null}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -236,6 +326,21 @@ const styles = StyleSheet.create({
   },
   inventoryRow: { flexDirection: 'row', gap: spacing.sm },
   inventoryCell: { flex: 1 },
+  weekdays: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  weekday: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weekdayOn: { backgroundColor: colors.accent },
+  weekdayText: { color: colors.textMuted, fontSize: font.size.sm, fontWeight: font.weight.semibold },
+  weekdayTextOn: { color: colors.bg },
+  repeatHint: { color: colors.textMuted, fontSize: font.size.xs, marginTop: spacing.xs },
+  secondToggle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
+  secondLabel: { color: colors.text, fontSize: font.size.md },
   pickerWrap: {
     alignItems: 'center',
     marginTop: spacing.sm,

@@ -1,9 +1,6 @@
 import { getDb } from './index';
 import { shiftDay, streakFromDays, toDayKey } from './dates';
-import {
-  cancelReminder,
-  scheduleDailyReminder,
-} from '../notifications';
+import { cancelReminders, scheduleReminders } from '../notifications';
 import type { NewSupplement, Supplement, SupplementStatus } from '../types';
 
 interface SupplementRow {
@@ -12,10 +9,23 @@ interface SupplementRow {
   dose: string | null;
   hour: number;
   minute: number;
+  hour2: number | null;
+  minute2: number | null;
+  weekdays: string | null;
   enabled: number;
-  notification_id: string | null;
+  notification_ids: string | null;
   stock: number | null;
   refill_at: number;
+}
+
+function parseJsonArray<T>(raw: string | null): T[] | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v : null;
+  } catch {
+    return null;
+  }
 }
 
 function mapRow(row: SupplementRow): Supplement {
@@ -25,11 +35,26 @@ function mapRow(row: SupplementRow): Supplement {
     dose: row.dose,
     hour: row.hour,
     minute: row.minute,
+    hour2: row.hour2,
+    minute2: row.minute2,
+    weekdays: parseJsonArray<number>(row.weekdays),
     enabled: row.enabled === 1,
-    notificationId: row.notification_id,
+    notificationIds: parseJsonArray<string>(row.notification_ids) ?? [],
     stock: row.stock,
     refillAt: row.refill_at,
   };
+}
+
+/** Build the list of reminder times for a supplement-like input. */
+function timesOf(
+  hour: number,
+  minute: number,
+  hour2: number | null | undefined,
+  minute2: number | null | undefined,
+): { hour: number; minute: number }[] {
+  const times = [{ hour, minute }];
+  if (hour2 != null && minute2 != null) times.push({ hour: hour2, minute: minute2 });
+  return times;
 }
 
 /** All supplements, ordered by reminder time of day. */
@@ -117,28 +142,34 @@ export async function updateSupplement(
 
   const name = input.name.trim();
   const dose = input.dose?.trim() ? input.dose.trim() : null;
-  let notificationId = existing.notificationId;
+  const weekdays = input.weekdays ?? null;
+  const hour2 = input.hour2 ?? null;
+  const minute2 = input.minute2 ?? null;
+  let notificationIds = existing.notificationIds;
 
   if (existing.enabled) {
-    await cancelReminder(existing.notificationId);
-    notificationId = await scheduleDailyReminder(
+    await cancelReminders(existing.notificationIds);
+    notificationIds = await scheduleReminders(
       name,
       dose,
-      input.hour,
-      input.minute,
-    ).catch(() => null);
+      timesOf(input.hour, input.minute, hour2, minute2),
+      weekdays,
+    ).catch(() => []);
   }
 
   await db.runAsync(
     `UPDATE supplements
-        SET name = ?, dose = ?, hour = ?, minute = ?, notification_id = ?,
-            stock = ?, refill_at = ?
+        SET name = ?, dose = ?, hour = ?, minute = ?, hour2 = ?, minute2 = ?,
+            weekdays = ?, notification_ids = ?, stock = ?, refill_at = ?
       WHERE id = ?`,
     name,
     dose,
     input.hour,
     input.minute,
-    notificationId,
+    hour2,
+    minute2,
+    weekdays ? JSON.stringify(weekdays) : null,
+    JSON.stringify(notificationIds),
     input.stock ?? null,
     input.refillAt ?? 0,
     id,
@@ -230,24 +261,31 @@ export async function addSupplement(
   const db = getDb();
   const name = input.name.trim();
   const dose = input.dose?.trim() ? input.dose.trim() : null;
+  const weekdays = input.weekdays ?? null;
+  const hour2 = input.hour2 ?? null;
+  const minute2 = input.minute2 ?? null;
 
-  const notificationId = await scheduleDailyReminder(
+  const notificationIds = await scheduleReminders(
     name,
     dose,
-    input.hour,
-    input.minute,
-  ).catch(() => null);
+    timesOf(input.hour, input.minute, hour2, minute2),
+    weekdays,
+  ).catch(() => []);
 
   const stock = input.stock ?? null;
   const refillAt = input.refillAt ?? 0;
   const result = await db.runAsync(
-    `INSERT INTO supplements (name, dose, hour, minute, enabled, notification_id, stock, refill_at)
-     VALUES (?, ?, ?, ?, 1, ?, ?, ?)`,
+    `INSERT INTO supplements
+       (name, dose, hour, minute, hour2, minute2, weekdays, enabled, notification_ids, stock, refill_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
     name,
     dose,
     input.hour,
     input.minute,
-    notificationId,
+    hour2,
+    minute2,
+    weekdays ? JSON.stringify(weekdays) : null,
+    JSON.stringify(notificationIds),
     stock,
     refillAt,
   );
@@ -258,8 +296,11 @@ export async function addSupplement(
     dose,
     hour: input.hour,
     minute: input.minute,
+    hour2,
+    minute2,
+    weekdays,
     enabled: true,
-    notificationId,
+    notificationIds,
     stock,
     refillAt,
   };
@@ -274,28 +315,28 @@ export async function setSupplementEnabled(
   enabled: boolean,
 ): Promise<Supplement> {
   const db = getDb();
-  let notificationId = supplement.notificationId;
+  let notificationIds = supplement.notificationIds;
 
   if (enabled) {
-    notificationId = await scheduleDailyReminder(
+    notificationIds = await scheduleReminders(
       supplement.name,
       supplement.dose,
-      supplement.hour,
-      supplement.minute,
-    ).catch(() => null);
+      timesOf(supplement.hour, supplement.minute, supplement.hour2, supplement.minute2),
+      supplement.weekdays,
+    ).catch(() => []);
   } else {
-    await cancelReminder(supplement.notificationId);
-    notificationId = null;
+    await cancelReminders(supplement.notificationIds);
+    notificationIds = [];
   }
 
   await db.runAsync(
-    'UPDATE supplements SET enabled = ?, notification_id = ? WHERE id = ?',
+    'UPDATE supplements SET enabled = ?, notification_ids = ? WHERE id = ?',
     enabled ? 1 : 0,
-    notificationId,
+    JSON.stringify(notificationIds),
     supplement.id,
   );
 
-  return { ...supplement, enabled, notificationId };
+  return { ...supplement, enabled, notificationIds };
 }
 
 /** Delete a supplement, its adherence history, and any pending reminder. */
@@ -303,7 +344,7 @@ export async function deleteSupplement(
   supplement: Supplement,
 ): Promise<void> {
   const db = getDb();
-  await cancelReminder(supplement.notificationId);
+  await cancelReminders(supplement.notificationIds);
   await db.runAsync(
     'DELETE FROM supplement_logs WHERE supplement_id = ?',
     supplement.id,

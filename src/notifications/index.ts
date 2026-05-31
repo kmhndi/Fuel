@@ -57,31 +57,53 @@ export async function getPermissionGranted(): Promise<boolean> {
 }
 
 /**
- * Schedule a daily repeating reminder and return its identifier so it can be
- * cancelled later. The caller is responsible for persisting the id.
+ * Schedule reminders for a supplement and return all created identifiers.
+ * One notification per time per selected weekday (or daily when `weekdays`
+ * is null/empty/all seven). The caller persists the returned ids.
  */
-export async function scheduleDailyReminder(
+export async function scheduleReminders(
   name: string,
   dose: string | null,
-  hour: number,
-  minute: number,
-): Promise<string> {
+  times: { hour: number; minute: number }[],
+  weekdays: number[] | null,
+): Promise<string[]> {
   const body = dose ? `Time to take ${name} (${dose}).` : `Time to take ${name}.`;
+  const content = {
+    title: '💊 Supplement reminder',
+    body,
+    ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
+  };
+  const everyDay = !weekdays || weekdays.length === 0 || weekdays.length === 7;
+  const ids: string[] = [];
 
-  return Notifications.scheduleNotificationAsync({
-    content: {
-      title: '💊 Supplement reminder',
-      body,
-      ...(Platform.OS === 'android'
-        ? { channelId: ANDROID_CHANNEL_ID }
-        : {}),
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute,
-    },
-  });
+  for (const t of times) {
+    if (everyDay) {
+      const id = await Notifications.scheduleNotificationAsync({
+        content,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: t.hour,
+          minute: t.minute,
+        },
+      }).catch(() => null);
+      if (id) ids.push(id);
+    } else {
+      for (const wd of weekdays!) {
+        const id = await Notifications.scheduleNotificationAsync({
+          content,
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            // expo weekday is 1=Sunday..7=Saturday; our wd is 0=Sun..6=Sat.
+            weekday: wd + 1,
+            hour: t.hour,
+            minute: t.minute,
+          },
+        }).catch(() => null);
+        if (id) ids.push(id);
+      }
+    }
+  }
+  return ids;
 }
 
 /** Hours at which water reminders fire when enabled. */
@@ -134,14 +156,12 @@ export async function cancelAllReminders(): Promise<void> {
   }
 }
 
-/** Cancel a previously scheduled reminder, ignoring unknown ids. */
-export async function cancelReminder(
-  notificationId: string | null,
-): Promise<void> {
-  if (!notificationId) return;
-  try {
-    await Notifications.cancelScheduledNotificationAsync(notificationId);
-  } catch {
-    // Already gone (e.g. cancelled by the OS) — nothing to do.
-  }
+/** Cancel a set of previously scheduled reminders, ignoring unknown ids. */
+export async function cancelReminders(ids: string[] | null): Promise<void> {
+  if (!ids?.length) return;
+  await Promise.all(
+    ids.map((id) =>
+      Notifications.cancelScheduledNotificationAsync(id).catch(() => {}),
+    ),
+  );
 }
