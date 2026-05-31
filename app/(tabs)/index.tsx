@@ -32,6 +32,7 @@ import {
   toDayKey,
 } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
+import { effectiveCalorieGoal } from '@/health';
 import { ProgressRing } from '@/components/ProgressRing';
 import { MacroBars } from '@/components/MacroBars';
 import { WaterCard } from '@/components/WaterCard';
@@ -172,7 +173,8 @@ export default function TodayScreen() {
     [router, load],
   );
 
-  const calLeft = goals.calorieGoal + exercise - summary.calories;
+  const dayCalorieGoal = effectiveCalorieGoal(goals, day);
+  const calLeft = dayCalorieGoal + exercise - summary.calories;
   const proteinLeft = goals.proteinGoal - summary.protein;
   const showSuggestion = isToday(day) && summary.count > 0 && (calLeft > 50 || proteinLeft > 5);
 
@@ -218,6 +220,7 @@ export default function TodayScreen() {
               summary={summary}
               exercise={exercise}
               goals={goals}
+              calorieGoal={dayCalorieGoal}
               onAddExercise={() => router.push(`/add-exercise?day=${day}`)}
             />
 
@@ -376,14 +379,16 @@ function DayOverview({
   summary,
   exercise,
   goals,
+  calorieGoal,
   onAddExercise,
 }: {
   summary: DaySummary;
   exercise: number;
   goals: ReturnType<typeof useGoals>['goals'];
+  calorieGoal: number;
   onAddExercise: () => void;
 }) {
-  const budget = goals.calorieGoal + exercise;
+  const budget = calorieGoal + exercise;
   const remaining = budget - summary.calories;
   const progress = budget > 0 ? summary.calories / budget : 0;
   const over = remaining < 0;
@@ -400,7 +405,7 @@ function DayOverview({
 
       <Pressable onPress={onAddExercise} style={styles.budgetLine} hitSlop={6}>
         <Text style={styles.budgetText}>
-          Goal {goals.calorieGoal.toLocaleString()}
+          Goal {calorieGoal.toLocaleString()}
         </Text>
         <View style={styles.exerciseChip}>
           <Ionicons name="barbell-outline" size={13} color={colors.accent} />

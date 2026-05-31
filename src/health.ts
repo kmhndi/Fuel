@@ -1,4 +1,14 @@
-import type { Sex, WeightUnit } from './types';
+import type { Goals, Sex, WeightUnit } from './types';
+
+/**
+ * The calorie goal that applies on a given day, honoring any per-weekday
+ * override (0=Sunday..6=Saturday); falls back to the base calorie goal.
+ */
+export function effectiveCalorieGoal(goals: Goals, dayKey: string): number {
+  const weekday = new Date(`${dayKey}T00:00:00`).getDay();
+  const override = goals.weekdayGoals?.[weekday];
+  return override != null && override > 0 ? override : goals.calorieGoal;
+}
 
 const LB_PER_KG = 2.2046226218;
 

@@ -14,6 +14,8 @@ interface SupplementRow {
   minute: number;
   enabled: number;
   notification_id: string | null;
+  stock: number | null;
+  refill_at: number;
 }
 
 function mapRow(row: SupplementRow): Supplement {
@@ -25,6 +27,8 @@ function mapRow(row: SupplementRow): Supplement {
     minute: row.minute,
     enabled: row.enabled === 1,
     notificationId: row.notification_id,
+    stock: row.stock,
+    refillAt: row.refill_at,
   };
 }
 
@@ -127,13 +131,16 @@ export async function updateSupplement(
 
   await db.runAsync(
     `UPDATE supplements
-        SET name = ?, dose = ?, hour = ?, minute = ?, notification_id = ?
+        SET name = ?, dose = ?, hour = ?, minute = ?, notification_id = ?,
+            stock = ?, refill_at = ?
       WHERE id = ?`,
     name,
     dose,
     input.hour,
     input.minute,
     notificationId,
+    input.stock ?? null,
+    input.refillAt ?? 0,
     id,
   );
 }
@@ -183,19 +190,32 @@ export async function setTaken(
 ): Promise<void> {
   const db = getDb();
   if (taken) {
-    await db.runAsync(
+    const res = await db.runAsync(
       `INSERT OR IGNORE INTO supplement_logs (supplement_id, day, taken_at)
        VALUES (?, ?, ?)`,
       supplementId,
       day,
       new Date().toISOString(),
     );
+    // Only decrement inventory if this actually marked a new dose.
+    if (res.changes > 0) {
+      await db.runAsync(
+        'UPDATE supplements SET stock = MAX(0, stock - 1) WHERE id = ? AND stock IS NOT NULL',
+        supplementId,
+      );
+    }
   } else {
-    await db.runAsync(
+    const res = await db.runAsync(
       'DELETE FROM supplement_logs WHERE supplement_id = ? AND day = ?',
       supplementId,
       day,
     );
+    if (res.changes > 0) {
+      await db.runAsync(
+        'UPDATE supplements SET stock = stock + 1 WHERE id = ? AND stock IS NOT NULL',
+        supplementId,
+      );
+    }
   }
 }
 
@@ -218,14 +238,18 @@ export async function addSupplement(
     input.minute,
   ).catch(() => null);
 
+  const stock = input.stock ?? null;
+  const refillAt = input.refillAt ?? 0;
   const result = await db.runAsync(
-    `INSERT INTO supplements (name, dose, hour, minute, enabled, notification_id)
-     VALUES (?, ?, ?, ?, 1, ?)`,
+    `INSERT INTO supplements (name, dose, hour, minute, enabled, notification_id, stock, refill_at)
+     VALUES (?, ?, ?, ?, 1, ?, ?, ?)`,
     name,
     dose,
     input.hour,
     input.minute,
     notificationId,
+    stock,
+    refillAt,
   );
 
   return {
@@ -236,6 +260,8 @@ export async function addSupplement(
     minute: input.minute,
     enabled: true,
     notificationId,
+    stock,
+    refillAt,
   };
 }
 

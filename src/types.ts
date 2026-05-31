@@ -108,6 +108,10 @@ export interface Supplement {
   enabled: boolean;
   /** expo-notifications identifier for the scheduled reminder, if any. */
   notificationId: string | null;
+  /** Doses remaining, or null if inventory isn't tracked. */
+  stock: number | null;
+  /** Warn when stock falls to or below this (0 = no threshold). */
+  refillAt: number;
 }
 
 /** A supplement plus today's adherence + streak, for the daily checklist. */
@@ -161,4 +165,7 @@ export interface NewMeal extends Macros {
 export type NewSupplement = Pick<
   Supplement,
   'name' | 'dose' | 'hour' | 'minute'
->;
+> & {
+  stock?: number | null;
+  refillAt?: number;
+};

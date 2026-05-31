@@ -223,6 +223,7 @@ export default function SettingsScreen() {
             </Text>
           ) : null}
           <GhostButton label="Not sure? Use the goal calculator" onPress={() => router.push('/goal-calculator')} />
+          <GhostButton label="Set per-day goals (training vs rest)" onPress={() => router.push('/weekday-goals')} />
         </Card>
 
         <Text style={styles.sectionTitle}>Water</Text>

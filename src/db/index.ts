@@ -159,6 +159,11 @@ const MIGRATIONS: string[] = [
     ALTER TABLE settings ADD COLUMN water_reminders INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE settings ADD COLUMN weekday_goals TEXT;
   `,
+  // 4 -> 5: supplement inventory (doses left + refill threshold).
+  `
+    ALTER TABLE supplements ADD COLUMN stock INTEGER;
+    ALTER TABLE supplements ADD COLUMN refill_at INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 /**

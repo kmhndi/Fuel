@@ -18,6 +18,7 @@ const ITEMS: Item[] = [
   { icon: 'fast-food-outline', title: 'Food library', subtitle: 'Manage your saved foods & favorites', href: '/food-library' },
   { icon: 'calendar-outline', title: 'Calendar', subtitle: 'Heatmap of your logging & goals', href: '/calendar' },
   { icon: 'trophy-outline', title: 'Achievements', subtitle: 'Badges and milestones', href: '/achievements' },
+  { icon: 'share-social-outline', title: 'Share today', subtitle: 'A shareable summary image', href: '/share-day' },
   { icon: 'flash-outline', title: 'Quick-add presets', subtitle: 'Your one-tap foods', href: '/presets' },
   { icon: 'calculator-outline', title: 'Goal calculator', subtitle: 'Estimate your calorie target (TDEE)', href: '/goal-calculator' },
   { icon: 'options-outline', title: 'Goals & settings', subtitle: 'Targets, units, water, backup', href: '/settings' },

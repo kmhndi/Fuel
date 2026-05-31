@@ -69,9 +69,14 @@ export default function RootLayout() {
         <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
         <Stack.Screen name="achievements" options={{ title: 'Achievements' }} />
         <Stack.Screen name="presets" options={{ title: 'Quick-add presets' }} />
+        <Stack.Screen name="weekday-goals" options={{ title: 'Per-day goals' }} />
         <Stack.Screen
           name="checkin"
           options={{ presentation: 'modal', title: 'Daily check-in' }}
+        />
+        <Stack.Screen
+          name="share-day"
+          options={{ presentation: 'modal', title: 'Share your day' }}
         />
         <Stack.Screen
           name="goal-calculator"

@@ -34,6 +34,8 @@ export default function AddSupplementScreen() {
 
   const [name, setName] = useState('');
   const [dose, setDose] = useState('');
+  const [stock, setStock] = useState('');
+  const [refillAt, setRefillAt] = useState('');
   const [time, setTime] = useState(() => {
     // Default to a sensible morning reminder (8:00 AM).
     const d = new Date();
@@ -52,6 +54,8 @@ export default function AddSupplementScreen() {
         if (!s) return;
         setName(s.name);
         setDose(s.dose ?? '');
+        setStock(s.stock != null ? String(s.stock) : '');
+        setRefillAt(s.refillAt ? String(s.refillAt) : '');
         const d = new Date();
         d.setHours(s.hour, s.minute, 0, 0);
         setTime(d);
@@ -70,11 +74,14 @@ export default function AddSupplementScreen() {
     if (!canSave || saving) return;
     setSaving(true);
     try {
+      const stockNum = Number.parseInt(stock, 10);
       const input = {
         name: name.trim(),
         dose: dose.trim() || null,
         hour: time.getHours(),
         minute: time.getMinutes(),
+        stock: Number.isFinite(stockNum) && stock !== '' ? Math.max(0, stockNum) : null,
+        refillAt: Math.max(0, Number.parseInt(refillAt, 10) || 0),
       };
       if (editingId !== null) {
         await updateSupplement(editingId, input);
@@ -118,6 +125,30 @@ export default function AddSupplementScreen() {
           placeholderTextColor={colors.textMuted}
           style={styles.input}
         />
+
+        <Text style={styles.label}>Inventory (optional)</Text>
+        <View style={styles.inventoryRow}>
+          <View style={styles.inventoryCell}>
+            <TextInput
+              value={stock}
+              onChangeText={(t) => setStock(t.replace(/[^0-9]/g, ''))}
+              placeholder="Doses left"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+              style={styles.input}
+            />
+          </View>
+          <View style={styles.inventoryCell}>
+            <TextInput
+              value={refillAt}
+              onChangeText={(t) => setRefillAt(t.replace(/[^0-9]/g, ''))}
+              placeholder="Refill at"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+              style={styles.input}
+            />
+          </View>
+        </View>
 
         <Text style={styles.label}>Remind me daily at</Text>
         {Platform.OS === 'android' && (
@@ -203,6 +234,8 @@ const styles = StyleSheet.create({
     fontSize: font.size.lg,
     fontWeight: font.weight.medium,
   },
+  inventoryRow: { flexDirection: 'row', gap: spacing.sm },
+  inventoryCell: { flex: 1 },
   pickerWrap: {
     alignItems: 'center',
     marginTop: spacing.sm,

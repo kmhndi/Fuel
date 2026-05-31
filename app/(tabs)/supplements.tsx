@@ -238,6 +238,11 @@ function SupplementRow({
           {item.streak > 0 ? (
             <Text style={styles.streak}>🔥 {item.streak}</Text>
           ) : null}
+          {item.stock != null ? (
+            <Text style={[styles.meta, item.stock <= item.refillAt && styles.lowStock]}>
+              · {item.stock} left{item.stock <= item.refillAt ? ' • refill' : ''}
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -364,6 +369,7 @@ const styles = StyleSheet.create({
     fontWeight: font.weight.semibold,
     marginLeft: spacing.xs,
   },
+  lowStock: { color: colors.danger, fontWeight: font.weight.semibold },
   bell: {
     padding: spacing.xs,
   },
