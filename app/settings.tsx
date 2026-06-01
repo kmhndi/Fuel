@@ -20,6 +20,10 @@ import {
   getPermissionGranted,
   requestNotificationPermission,
 } from '@/notifications';
+import {
+  setAlternateAppIcon,
+  supportsAlternateIcons,
+} from 'expo-alternate-app-icons';
 import { exportBackup, importBackup } from '@/backup';
 import { useGoals } from '@/state/GoalsContext';
 import {
@@ -32,7 +36,7 @@ import {
 import { caloriesFromMacros, macroColors } from '@/nutrition';
 import { displayToKg, kgToDisplay } from '@/health';
 import { selectionFeedback, successFeedback } from '@/haptics';
-import { ACCENT_CHOICES, colors, font, radius, spacing } from '@/theme';
+import { ACCENT_CHOICES, ACCENT_ICON_NAME, colors, font, radius, spacing } from '@/theme';
 import type { ThemeMode, WeightUnit } from '@/types';
 
 export default function SettingsScreen() {
@@ -117,11 +121,19 @@ export default function SettingsScreen() {
       theme,
       accent,
     });
+    // Switch the home-screen app icon to match the chosen accent.
+    if (appearanceChanged && Platform.OS !== 'web' && supportsAlternateIcons) {
+      try {
+        await setAlternateAppIcon(ACCENT_ICON_NAME[accent] ?? null);
+      } catch {
+        // Device may not support alternate icons — ignore.
+      }
+    }
     await refresh();
     successFeedback();
     setSaving(false);
     if (appearanceChanged) {
-      Alert.alert('Saved', 'Reopen Fuel to see the new look applied everywhere.');
+      Alert.alert('Saved', 'Your new accent is set. Reopen Fuel to see it across the app and the home-screen icon.');
     }
     router.back();
   };

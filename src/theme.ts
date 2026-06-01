@@ -18,6 +18,19 @@ export const ACCENT_CHOICES = [
   '#FACC15', // yellow
 ] as const;
 
+/**
+ * Maps each accent to its alternate app-icon name (matching app.json). The
+ * default mint accent uses the primary icon, hence null.
+ */
+export const ACCENT_ICON_NAME: Record<string, string | null> = {
+  '#22D3A7': null,
+  '#60A5FA': 'Blue',
+  '#FB923C': 'Orange',
+  '#F472B6': 'Pink',
+  '#A78BFA': 'Violet',
+  '#FACC15': 'Yellow',
+};
+
 interface Prefs {
   theme: 'dark' | 'light';
   accent: string;
