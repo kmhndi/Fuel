@@ -9,9 +9,66 @@ import {
   requestNotificationPermission,
 } from '@/notifications';
 import { GoalsProvider } from '@/state/GoalsContext';
+import { LanguageProvider, useT } from '@/i18n';
 import { colors, themeMode } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function RootNavigator() {
+  const { t } = useT();
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.bg },
+        headerTintColor: colors.text,
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="add-meal"
+        options={{ presentation: 'modal', title: t('title.logMeal') }}
+      />
+      <Stack.Screen
+        name="add-supplement"
+        options={{ presentation: 'modal', title: t('title.newSupplement') }}
+      />
+      <Stack.Screen
+        name="add-exercise"
+        options={{ presentation: 'modal', title: t('title.logExercise') }}
+      />
+      <Stack.Screen
+        name="settings"
+        options={{ presentation: 'modal', title: t('title.settings') }}
+      />
+      <Stack.Screen name="weight" options={{ title: t('title.weight') }} />
+      <Stack.Screen name="food-library" options={{ title: t('title.foodLibrary') }} />
+      <Stack.Screen name="meal-search" options={{ title: t('title.searchMeals') }} />
+      <Stack.Screen name="calendar" options={{ title: t('title.calendar') }} />
+      <Stack.Screen name="achievements" options={{ title: t('title.achievements') }} />
+      <Stack.Screen name="presets" options={{ title: t('title.presets') }} />
+      <Stack.Screen name="categories" options={{ title: t('title.categories') }} />
+      <Stack.Screen name="weekday-goals" options={{ title: t('title.weekdayGoals') }} />
+      <Stack.Screen
+        name="checkin"
+        options={{ presentation: 'modal', title: t('title.checkin') }}
+      />
+      <Stack.Screen
+        name="share-day"
+        options={{ presentation: 'modal', title: t('title.shareDay') }}
+      />
+      <Stack.Screen
+        name="goal-calculator"
+        options={{ presentation: 'modal', title: t('title.goalCalculator') }}
+      />
+      <Stack.Screen
+        name="onboarding"
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -36,58 +93,11 @@ export default function RootLayout() {
   }
 
   return (
-    <GoalsProvider>
-      <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text,
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.bg },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="add-meal"
-          options={{ presentation: 'modal', title: 'Log a meal' }}
-        />
-        <Stack.Screen
-          name="add-supplement"
-          options={{ presentation: 'modal', title: 'New supplement' }}
-        />
-        <Stack.Screen
-          name="add-exercise"
-          options={{ presentation: 'modal', title: 'Log exercise' }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{ presentation: 'modal', title: 'Goals & settings' }}
-        />
-        <Stack.Screen name="weight" options={{ title: 'Weight & body' }} />
-        <Stack.Screen name="food-library" options={{ title: 'Food library' }} />
-        <Stack.Screen name="meal-search" options={{ title: 'Search meals' }} />
-        <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
-        <Stack.Screen name="achievements" options={{ title: 'Achievements' }} />
-        <Stack.Screen name="presets" options={{ title: 'Quick-add presets' }} />
-        <Stack.Screen name="categories" options={{ title: 'Meal categories' }} />
-        <Stack.Screen name="weekday-goals" options={{ title: 'Per-day goals' }} />
-        <Stack.Screen
-          name="checkin"
-          options={{ presentation: 'modal', title: 'Daily check-in' }}
-        />
-        <Stack.Screen
-          name="share-day"
-          options={{ presentation: 'modal', title: 'Share your day' }}
-        />
-        <Stack.Screen
-          name="goal-calculator"
-          options={{ presentation: 'modal', title: 'Goal calculator' }}
-        />
-        <Stack.Screen
-          name="onboarding"
-          options={{ headerShown: false, gestureEnabled: false }}
-        />
-      </Stack>
-    </GoalsProvider>
+    <LanguageProvider>
+      <GoalsProvider>
+        <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
+        <RootNavigator />
+      </GoalsProvider>
+    </LanguageProvider>
   );
 }

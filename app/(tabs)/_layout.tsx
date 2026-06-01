@@ -1,9 +1,11 @@
 import { Pressable } from 'react-native';
 import { Link, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useT } from '@/i18n';
 import { colors, spacing } from '@/theme';
 
 export default function TabsLayout() {
+  const { t } = useT();
   return (
     <Tabs
       screenOptions={{
@@ -23,8 +25,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Today',
-          tabBarLabel: 'Today',
+          title: t('tabs.today'),
+          tabBarLabel: t('tabs.today'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flame" color={color} size={size} />
           ),
@@ -46,7 +48,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="supplements"
         options={{
-          title: 'Supplements',
+          title: t('tabs.supplements'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="medkit" color={color} size={size} />
           ),
@@ -55,7 +57,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: 'Trends',
+          title: t('tabs.trends'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="stats-chart" color={color} size={size} />
           ),
@@ -64,7 +66,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="more"
         options={{
-          title: 'More',
+          title: t('tabs.more'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid" color={color} size={size} />
           ),

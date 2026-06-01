@@ -191,6 +191,10 @@ const MIGRATIONS: string[] = [
   `
     ALTER TABLE settings ADD COLUMN resting_burn INTEGER;
   `,
+  // 8 -> 9: app language (en/ar).
+  `
+    ALTER TABLE settings ADD COLUMN language TEXT NOT NULL DEFAULT 'en';
+  `,
 ];
 
 /**

@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from './ui';
+import { useT } from '../i18n';
 import { tapFeedback } from '../haptics';
 import { colors, font, radius, spacing } from '../theme';
 
@@ -23,6 +24,7 @@ export function WaterCard({
   onAdd: () => void;
   onRemove: () => void;
 }) {
+  const { t } = useT();
   // Cap the rendered icons so a very high goal doesn't overflow the row.
   const dotsToShow = Math.min(Math.max(goal, glasses), 12);
   const ml = glasses * glassMl;
@@ -34,7 +36,7 @@ export function WaterCard({
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Ionicons name="water" size={18} color={WATER_BLUE} />
-          <Text style={styles.title}>Water</Text>
+          <Text style={styles.title}>{t('today.water')}</Text>
         </View>
         <Text style={[styles.count, met && { color: WATER_BLUE }]}>
           {ml.toLocaleString()} / {goalMl.toLocaleString()} ml
@@ -77,7 +79,7 @@ export function WaterCard({
           style={({ pressed }) => [styles.addGlass, pressed && styles.pressed]}
         >
           <Ionicons name="add" size={20} color={colors.bg} />
-          <Text style={styles.addGlassLabel}>Glass</Text>
+          <Text style={styles.addGlassLabel}>{t('today.glass')}</Text>
         </Pressable>
       </View>
     </Card>

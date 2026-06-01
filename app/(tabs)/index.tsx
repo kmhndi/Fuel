@@ -34,6 +34,7 @@ import {
   toDayKey,
 } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
+import { useT } from '@/i18n';
 import { effectiveCalorieGoal, effectiveRestingBurn } from '@/health';
 import { ProgressRing } from '@/components/ProgressRing';
 import { MacroBars } from '@/components/MacroBars';
@@ -67,6 +68,7 @@ export default function TodayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { goals, loaded } = useGoals();
+  const { t } = useT();
   const onboardedPrompted = useRef(false);
   const [day, setDay] = useState(() => toDayKey());
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -232,7 +234,7 @@ export default function TodayScreen() {
                 style={({ pressed }) => [styles.banner, pressed && styles.rowPressed]}
               >
                 <Ionicons name="sparkles-outline" size={18} color={colors.accent} />
-                <Text style={styles.bannerText}>Set your daily goals</Text>
+                <Text style={styles.bannerText}>{t('today.setGoals')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.accent} />
               </Pressable>
             ) : null}
@@ -253,7 +255,7 @@ export default function TodayScreen() {
               <View style={styles.insight}>
                 <Ionicons name="flame" size={16} color={colors.warning} />
                 <Text style={styles.insightText}>
-                  {streak}-day logging streak — keep it going!
+                  {t('today.streak', { n: streak })}
                 </Text>
               </View>
             ) : null}
@@ -307,13 +309,13 @@ export default function TodayScreen() {
                       {checkin.mood ? MOOD_EMOJI[checkin.mood - 1] : '🙂'}
                     </Text>
                     <Text style={styles.checkinText}>
-                      Mood logged{checkin.energy ? ` · energy ${checkin.energy}/5` : ''}
+                      {t('today.moodLogged')}{checkin.energy ? ` · ${checkin.energy}/5` : ''}
                     </Text>
                   </>
                 ) : (
                   <>
                     <Ionicons name="happy-outline" size={20} color={colors.accent} />
-                    <Text style={styles.checkinText}>How are you feeling today?</Text>
+                    <Text style={styles.checkinText}>{t('today.howFeeling')}</Text>
                   </>
                 )}
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
@@ -344,8 +346,8 @@ export default function TodayScreen() {
         ListEmptyComponent={
           <EmptyState
             icon={<Ionicons name="restaurant-outline" size={40} color={colors.textMuted} />}
-            title={isToday(day) ? 'Nothing logged yet' : 'No meals this day'}
-            subtitle="Tap + to add a meal, or use Copy yesterday. Logged foods become one-tap quick-adds."
+            title={isToday(day) ? t('today.nothingLogged') : t('today.noMeals')}
+            subtitle={t('today.emptySub')}
           />
         }
       />
@@ -381,6 +383,7 @@ function DateBar({
   onNext: () => void;
   onToday: () => void;
 }) {
+  const { t } = useT();
   const atToday = isToday(day);
   const nextDisabled = isFuture(shiftDay(day, 1));
   return (
@@ -390,7 +393,7 @@ function DateBar({
       </Pressable>
       <Pressable onPress={onToday} disabled={atToday} style={styles.dateLabelWrap}>
         <Text style={styles.dateLabel}>{formatDayLabel(day)}</Text>
-        {!atToday ? <Text style={styles.jumpToday}>Jump to today</Text> : null}
+        {!atToday ? <Text style={styles.jumpToday}>{t('today.jumpToday')}</Text> : null}
       </Pressable>
       <Pressable
         onPress={onNext}
@@ -413,6 +416,7 @@ function DayOverview({
   goals: ReturnType<typeof useGoals>['goals'];
   calorieGoal: number;
 }) {
+  const { t } = useT();
   // The ring tracks intake against the goal only; exercise is handled
   // separately in the energy-balance card so it can't inflate the goal.
   const remaining = calorieGoal - summary.calories;
@@ -423,9 +427,12 @@ function DayOverview({
     <Card style={styles.overviewCard}>
       <ProgressRing progress={progress} size={196} strokeWidth={16}>
         <Text style={styles.ringValue}>{Math.abs(remaining).toLocaleString()}</Text>
-        <Text style={styles.ringLabel}>{over ? 'kcal over' : 'kcal left'}</Text>
+        <Text style={styles.ringLabel}>{over ? t('today.kcalOver') : t('today.kcalLeft')}</Text>
         <Text style={styles.ringSub}>
-          {summary.calories.toLocaleString()} / {calorieGoal.toLocaleString()} eaten
+          {t('today.eatenOf', {
+            eaten: summary.calories.toLocaleString(),
+            goal: calorieGoal.toLocaleString(),
+          })}
         </Text>
       </ProgressRing>
 
@@ -457,6 +464,7 @@ function EnergyBalanceCard({
   onAddExercise: () => void;
   onSetResting: () => void;
 }) {
+  const { t } = useT();
   const burned = (restingBurn ?? 0) + exercise;
   const net = eaten - burned; // negative = deficit
   const deficit = net < 0;
@@ -465,11 +473,11 @@ function EnergyBalanceCard({
   return (
     <Card style={styles.balanceCard}>
       <View style={styles.balanceRow}>
-        <BalanceCell label="Eaten" value={eaten} color={colors.text} />
+        <BalanceCell label={t('today.eaten')} value={eaten} color={colors.text} />
         <Ionicons name="remove" size={16} color={colors.textMuted} />
         <Pressable onPress={onAddExercise} style={styles.balanceCellPress}>
           <BalanceCell
-            label={restingBurn != null ? 'Burned' : 'Exercise'}
+            label={restingBurn != null ? t('today.burned') : t('today.exercise')}
             value={burned}
             color={colors.text}
           />
@@ -484,7 +492,9 @@ function EnergyBalanceCard({
             color={deficit ? colors.accent : colors.warning}
           />
           <Text style={[styles.netText, { color: deficit ? colors.accent : colors.warning }]}>
-            {Math.abs(net).toLocaleString()} kcal {deficit ? 'deficit' : 'surplus'} today
+            {deficit
+              ? t('today.deficit', { n: Math.abs(net).toLocaleString() })
+              : t('today.surplus', { n: Math.abs(net).toLocaleString() })}
           </Text>
         </View>
       ) : null}
@@ -493,14 +503,14 @@ function EnergyBalanceCard({
         <Pressable onPress={onSetResting} hitSlop={6}>
           <Text style={styles.balanceMeta}>
             {restingBurn != null
-              ? `Resting burn ${restingBurn.toLocaleString()} kcal · tap to adjust`
-              : 'Add your resting burn for true deficit ›'}
+              ? t('today.restingAdjust', { n: restingBurn.toLocaleString() })
+              : t('today.restingPrompt')}
           </Text>
         </Pressable>
         <Pressable onPress={onAddExercise} hitSlop={6} style={styles.exerciseChip}>
           <Ionicons name="barbell-outline" size={13} color={colors.accent} />
           <Text style={styles.exerciseText}>
-            {exercise > 0 ? `${exercise.toLocaleString()} burned` : 'Add exercise'}
+            {exercise > 0 ? t('today.exerciseBurned', { n: exercise.toLocaleString() }) : t('today.addExercise')}
           </Text>
         </Pressable>
       </View>
@@ -526,11 +536,12 @@ function QuickActions({
   onExercise: () => void;
   onCopy: () => void;
 }) {
+  const { t } = useT();
   return (
     <View style={styles.quickActions}>
-      <QuickAction icon="flash-outline" label="Quick kcal" onPress={onQuick} />
-      <QuickAction icon="barbell-outline" label="Exercise" onPress={onExercise} />
-      <QuickAction icon="copy-outline" label="Copy day" onPress={onCopy} />
+      <QuickAction icon="flash-outline" label={t('today.quickKcal')} onPress={onQuick} />
+      <QuickAction icon="barbell-outline" label={t('today.exercise')} onPress={onExercise} />
+      <QuickAction icon="copy-outline" label={t('today.copyDay')} onPress={onCopy} />
     </View>
   );
 }

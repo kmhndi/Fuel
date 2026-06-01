@@ -9,7 +9,7 @@
     "newArchEnabled": true,
     "icon": "./assets/icon.png",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.khalidalmohannadi.fuel",
       "buildNumber": "1",
       "infoPlist": {

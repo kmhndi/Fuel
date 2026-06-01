@@ -68,6 +68,8 @@ export interface DayMeasurement {
 
 export type ThemeMode = 'dark' | 'light';
 
+export type Language = 'en' | 'ar';
+
 /** A logged bout of exercise whose calories add back to the daily budget. */
 export interface Exercise {
   id: number;
@@ -154,6 +156,8 @@ export interface Goals {
   /** Optional manual resting burn (RMR, kcal/day); null = auto from profile. */
   restingBurn: number | null;
   theme: ThemeMode;
+  /** UI language. */
+  language: Language;
   /** Accent color hex. */
   accent: string;
   /** Whether interval water reminders are enabled. */

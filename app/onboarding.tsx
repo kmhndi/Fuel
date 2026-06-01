@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,14 +13,19 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { saveGoals } from '@/db/settings';
 import { useGoals } from '@/state/GoalsContext';
+import { useT } from '@/i18n';
 import { Field, GhostButton, PrimaryButton } from '@/components/ui';
 import { caloriesFromMacros } from '@/nutrition';
 import { successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
+import type { Language } from '@/types';
+
+const STEPS = 4;
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const { refresh } = useGoals();
+  const { t, lang, setLanguage } = useT();
   const [step, setStep] = useState(0);
 
   const [calorieGoal, setCalorieGoal] = useState('2000');
@@ -55,84 +61,118 @@ export default function OnboardingScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.dots}>
-          {[0, 1, 2].map((i) => (
+          {Array.from({ length: STEPS }).map((_, i) => (
             <View key={i} style={[styles.dot, i === step && styles.dotActive]} />
           ))}
         </View>
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {step === 0 ? (
-            <View style={styles.welcome}>
+            <View style={styles.form}>
               <View style={styles.logo}>
-                <Ionicons name="flash" size={48} color={colors.accent} />
+                <Ionicons name="flash" size={44} color={colors.accent} />
               </View>
-              <Text style={styles.title}>Welcome to Fuel</Text>
-              <Text style={styles.body}>
-                A private, on-device tracker for your calories, macros, water and
-                supplements. No account, no cloud — just you and your data.
-              </Text>
+              <Text style={styles.title}>{t('onb.chooseLanguage')}</Text>
+              <LanguageButton
+                label="English"
+                active={lang === 'en'}
+                onPress={() => setLanguage('en')}
+              />
+              <LanguageButton
+                label="العربية"
+                active={lang === 'ar'}
+                onPress={() => setLanguage('ar')}
+              />
+              <Text style={styles.hint}>{t('onb.languageHint')}</Text>
             </View>
           ) : null}
 
           {step === 1 ? (
-            <View style={styles.form}>
-              <Text style={styles.title}>Your daily goals</Text>
-              <Text style={styles.body}>You can fine-tune these any time in Settings.</Text>
-              <Field
-                label="Calories"
-                value={calorieGoal}
-                onChangeText={(t) => setCalorieGoal(t.replace(/[^0-9]/g, ''))}
-                keyboardType="number-pad"
-                suffix="kcal"
-              />
-              <View style={styles.row}>
-                <View style={styles.cell}>
-                  <Field label="Protein" value={proteinGoal} onChangeText={(t) => setProteinGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
-                </View>
-                <View style={styles.cell}>
-                  <Field label="Carbs" value={carbGoal} onChangeText={(t) => setCarbGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
-                </View>
-                <View style={styles.cell}>
-                  <Field label="Fat" value={fatGoal} onChangeText={(t) => setFatGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
-                </View>
+            <View style={styles.welcome}>
+              <View style={styles.logo}>
+                <Ionicons name="flash" size={48} color={colors.accent} />
               </View>
-              {macroCalories > 0 ? (
-                <Text style={styles.hint}>Macros total ~{macroCalories.toLocaleString()} kcal</Text>
-              ) : null}
-              <Field
-                label="Water goal"
-                value={waterGoal}
-                onChangeText={(t) => setWaterGoal(t.replace(/[^0-9]/g, ''))}
-                keyboardType="number-pad"
-                suffix="glasses"
-              />
+              <Text style={styles.title}>{t('onb.welcomeTitle')}</Text>
+              <Text style={styles.body}>{t('onb.welcomeBody')}</Text>
             </View>
           ) : null}
 
           {step === 2 ? (
+            <View style={styles.form}>
+              <Text style={styles.title}>{t('onb.goalsTitle')}</Text>
+              <Text style={styles.body}>{t('onb.goalsBody')}</Text>
+              <Field
+                label={t('onb.calories')}
+                value={calorieGoal}
+                onChangeText={(v) => setCalorieGoal(v.replace(/[^0-9]/g, ''))}
+                keyboardType="number-pad"
+                suffix={t('common.kcal')}
+              />
+              <View style={styles.row}>
+                <View style={styles.cell}>
+                  <Field label={t('onb.protein')} value={proteinGoal} onChangeText={(v) => setProteinGoal(v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
+                </View>
+                <View style={styles.cell}>
+                  <Field label={t('onb.carbs')} value={carbGoal} onChangeText={(v) => setCarbGoal(v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
+                </View>
+                <View style={styles.cell}>
+                  <Field label={t('onb.fat')} value={fatGoal} onChangeText={(v) => setFatGoal(v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
+                </View>
+              </View>
+              {macroCalories > 0 ? (
+                <Text style={styles.hint}>{t('onb.macrosTotal', { n: macroCalories.toLocaleString() })}</Text>
+              ) : null}
+              <Field
+                label={t('onb.waterGoal')}
+                value={waterGoal}
+                onChangeText={(v) => setWaterGoal(v.replace(/[^0-9]/g, ''))}
+                keyboardType="number-pad"
+                suffix={t('onb.glasses')}
+              />
+            </View>
+          ) : null}
+
+          {step === 3 ? (
             <View style={styles.welcome}>
               <View style={styles.logo}>
                 <Ionicons name="checkmark" size={48} color={colors.accent} />
               </View>
-              <Text style={styles.title}>You're all set</Text>
-              <Text style={styles.body}>
-                Tap the + on the Today tab to log your first meal. Foods you log
-                become one-tap quick-adds. Enjoy!
-              </Text>
+              <Text style={styles.title}>{t('onb.doneTitle')}</Text>
+              <Text style={styles.body}>{t('onb.doneBody')}</Text>
             </View>
           ) : null}
         </ScrollView>
 
         <View style={styles.footer}>
-          {step < 2 ? (
-            <PrimaryButton label="Continue" onPress={() => setStep((s) => s + 1)} />
+          {step < STEPS - 1 ? (
+            <PrimaryButton label={t('common.continue')} onPress={() => setStep((s) => s + 1)} />
           ) : (
-            <PrimaryButton label="Start tracking" onPress={finish} />
+            <PrimaryButton label={t('onb.start')} onPress={finish} />
           )}
-          {step === 0 ? <GhostButton label="Skip" onPress={finish} /> : null}
+          {step === 1 ? <GhostButton label={t('common.skip')} onPress={finish} /> : null}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function LanguageButton({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.langButton, active && styles.langButtonActive]}
+    >
+      <Text style={[styles.langText, active && styles.langTextActive]}>{label}</Text>
+      {active ? <Ionicons name="checkmark-circle" size={22} color={colors.accent} /> : null}
+    </Pressable>
   );
 }
 
@@ -152,12 +192,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
+    alignSelf: 'center',
   },
   title: { color: colors.text, fontSize: font.size.xl, fontWeight: font.weight.bold, textAlign: 'center' },
   body: { color: colors.textMuted, fontSize: font.size.md, lineHeight: 22, textAlign: 'center' },
   form: { gap: spacing.md },
   row: { flexDirection: 'row', gap: spacing.sm },
   cell: { flex: 1 },
-  hint: { color: colors.textMuted, fontSize: font.size.sm },
+  hint: { color: colors.textMuted, fontSize: font.size.sm, textAlign: 'center' },
   footer: { padding: spacing.xl, gap: spacing.sm },
+  langButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: colors.border,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+  },
+  langButtonActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+  langText: { color: colors.text, fontSize: font.size.lg, fontWeight: font.weight.semibold },
+  langTextActive: { color: colors.accent },
 });

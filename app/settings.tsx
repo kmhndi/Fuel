@@ -26,6 +26,7 @@ import {
 } from 'expo-alternate-app-icons';
 import { exportBackup, importBackup } from '@/backup';
 import { useGoals } from '@/state/GoalsContext';
+import { useT } from '@/i18n';
 import {
   Card,
   Field,
@@ -37,11 +38,20 @@ import { caloriesFromMacros, macroColors } from '@/nutrition';
 import { displayToKg, kgToDisplay } from '@/health';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { ACCENT_CHOICES, ACCENT_ICON_NAME, colors, font, radius, spacing } from '@/theme';
-import type { ThemeMode, WeightUnit } from '@/types';
+import type { Language, ThemeMode, WeightUnit } from '@/types';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { refresh } = useGoals();
+  const { t, lang, setLanguage } = useT();
+
+  const onChangeLanguage = async (value: Language) => {
+    selectionFeedback();
+    const needsRestart = await setLanguage(value);
+    if (needsRestart) {
+      Alert.alert(t('set.language'), t('set.languageRestart'));
+    }
+  };
 
   const [calorieGoal, setCalorieGoal] = useState('');
   const [proteinGoal, setProteinGoal] = useState('');
@@ -222,7 +232,7 @@ export default function SettingsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.sectionTitle}>Daily goals</Text>
+        <Text style={styles.sectionTitle}>{t('set.dailyGoals')}</Text>
         <Card style={styles.card}>
           <Field
             label="Calories"
@@ -251,7 +261,7 @@ export default function SettingsScreen() {
           <GhostButton label="Set per-day goals (training vs rest)" onPress={() => router.push('/weekday-goals')} />
         </Card>
 
-        <Text style={styles.sectionTitle}>Water</Text>
+        <Text style={styles.sectionTitle}>{t('set.water')}</Text>
         <Card style={styles.row}>
           <View style={styles.cell}>
             <Field label="Daily goal" value={waterGoal} onChangeText={(t) => setWaterGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="glasses" />
@@ -261,7 +271,7 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        <Text style={styles.sectionTitle}>Units</Text>
+        <Text style={styles.sectionTitle}>{t('set.units')}</Text>
         <Card>
           <Text style={styles.unitLabel}>Weight</Text>
           <SegmentedControl<WeightUnit>
@@ -274,21 +284,33 @@ export default function SettingsScreen() {
           />
         </Card>
 
-        <Text style={styles.sectionTitle}>Appearance</Text>
+        <Text style={styles.sectionTitle}>{t('set.language')}</Text>
+        <Card>
+          <SegmentedControl<Language>
+            value={lang}
+            onChange={onChangeLanguage}
+            options={[
+              { value: 'en', label: 'English' },
+              { value: 'ar', label: 'العربية' },
+            ]}
+          />
+        </Card>
+
+        <Text style={styles.sectionTitle}>{t('set.appearance')}</Text>
         <Card style={styles.card}>
-          <Text style={styles.unitLabel}>Theme</Text>
+          <Text style={styles.unitLabel}>{t('set.theme')}</Text>
           <SegmentedControl<ThemeMode>
             value={theme}
-            onChange={(t) => {
-              setTheme(t);
+            onChange={(value) => {
+              setTheme(value);
               setAppearanceChanged(true);
             }}
             options={[
-              { value: 'dark', label: 'Dark' },
-              { value: 'light', label: 'Light' },
+              { value: 'dark', label: t('set.themeDark') },
+              { value: 'light', label: t('set.themeLight') },
             ]}
           />
-          <Text style={styles.unitLabel}>Accent</Text>
+          <Text style={styles.unitLabel}>{t('set.accent')}</Text>
           <View style={styles.swatches}>
             {ACCENT_CHOICES.map((c) => (
               <Pressable
@@ -313,7 +335,7 @@ export default function SettingsScreen() {
           ) : null}
         </Card>
 
-        <Text style={styles.sectionTitle}>Targets</Text>
+        <Text style={styles.sectionTitle}>{t('set.targets')}</Text>
         <Card style={styles.row}>
           <View style={styles.cell}>
             <Field label="Goal weight" value={goalWeight} onChangeText={(t) => setGoalWeight(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix={weightUnit} />
@@ -323,7 +345,7 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        <Text style={styles.sectionTitle}>Energy balance</Text>
+        <Text style={styles.sectionTitle}>{t('set.energy')}</Text>
         <Card style={styles.card}>
           <Field
             label="Resting burn (RMR)"
@@ -339,7 +361,7 @@ export default function SettingsScreen() {
           </Text>
         </Card>
 
-        <Text style={styles.sectionTitle}>Notifications</Text>
+        <Text style={styles.sectionTitle}>{t('set.notifications')}</Text>
         <Card style={styles.notifCard}>
           <View style={styles.notifRow}>
             <Ionicons name={notifGranted ? 'notifications' : 'notifications-off-outline'} size={22} color={notifGranted ? colors.accent : colors.danger} />
@@ -362,7 +384,7 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        <Text style={styles.sectionTitle}>Backup</Text>
+        <Text style={styles.sectionTitle}>{t('set.backup')}</Text>
         <Card style={styles.card}>
           <Text style={styles.privacy}>
             Export a copy of everything as a file, or restore from one. Great before reinstalling.
@@ -377,7 +399,7 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        <Text style={styles.sectionTitle}>Data</Text>
+        <Text style={styles.sectionTitle}>{t('set.data')}</Text>
         <Card>
           <Text style={styles.privacy}>
             Everything stays on this device — no account, no cloud, no tracking.
@@ -389,7 +411,7 @@ export default function SettingsScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <PrimaryButton label="Save goals" onPress={save} loading={saving || busy} />
+        <PrimaryButton label={t('set.saveGoals')} onPress={save} loading={saving || busy} />
       </View>
     </KeyboardAvoidingView>
   );

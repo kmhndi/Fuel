@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from './ui';
+import { useT } from '../i18n';
 import { tapFeedback } from '../haptics';
 import { colors, font, radius, spacing } from '../theme';
 
@@ -24,6 +25,7 @@ export function CaffeineCard({
   onAdd: (mg: number) => void;
   onReset: () => void;
 }) {
+  const { t } = useT();
   const pct = limit > 0 ? Math.min(mg / limit, 1) : 0;
   const over = mg > limit;
 
@@ -32,7 +34,7 @@ export function CaffeineCard({
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Ionicons name="cafe" size={18} color={COFFEE_BROWN} />
-          <Text style={styles.title}>Caffeine</Text>
+          <Text style={styles.title}>{t('today.caffeine')}</Text>
         </View>
         <Text style={[styles.count, over && { color: colors.danger }]}>
           {mg} / {limit} mg

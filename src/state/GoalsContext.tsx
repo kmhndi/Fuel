@@ -34,6 +34,7 @@ const FALLBACK: Goals = {
   caffeineLimit: 400,
   restingBurn: null,
   theme: 'dark',
+  language: 'en',
   accent: '#22D3A7',
   waterReminders: false,
   weekdayGoals: null,

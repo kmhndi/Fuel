@@ -1,6 +1,6 @@
 import { getDb } from './index';
 import { cancelAllReminders } from '../notifications';
-import type { Goals, Sex, ThemeMode, WeightUnit } from '../types';
+import type { Goals, Language, Sex, ThemeMode, WeightUnit } from '../types';
 
 interface SettingsRow {
   calorie_goal: number;
@@ -18,6 +18,7 @@ interface SettingsRow {
   caffeine_limit: number;
   resting_burn: number | null;
   theme: ThemeMode;
+  language: Language;
   accent: string;
   water_reminders: number;
   weekday_goals: string | null;
@@ -40,6 +41,7 @@ const DEFAULTS: Goals = {
   caffeineLimit: 400,
   restingBurn: null,
   theme: 'dark',
+  language: 'en',
   accent: '#22D3A7',
   waterReminders: false,
   weekdayGoals: null,
@@ -79,6 +81,7 @@ export async function getGoals(): Promise<Goals> {
     caffeineLimit: row.caffeine_limit,
     restingBurn: row.resting_burn,
     theme: row.theme,
+    language: row.language === 'ar' ? 'ar' : 'en',
     accent: row.accent,
     waterReminders: row.water_reminders === 1,
     weekdayGoals: parseWeekdayGoals(row.weekday_goals),
@@ -101,8 +104,8 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     `INSERT INTO settings
        (id, calorie_goal, protein_goal, carb_goal, fat_goal, water_goal,
         glass_ml, weight_unit, sex, age, height_cm, activity, goal_weight_kg,
-        caffeine_limit, resting_burn, theme, accent, water_reminders, weekday_goals, onboarded)
-     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        caffeine_limit, resting_burn, theme, language, accent, water_reminders, weekday_goals, onboarded)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
      ON CONFLICT(id) DO UPDATE SET
        calorie_goal = excluded.calorie_goal,
        protein_goal = excluded.protein_goal,
@@ -119,6 +122,7 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
        caffeine_limit = excluded.caffeine_limit,
        resting_burn = excluded.resting_burn,
        theme = excluded.theme,
+       language = excluded.language,
        accent = excluded.accent,
        water_reminders = excluded.water_reminders,
        weekday_goals = excluded.weekday_goals,
@@ -138,9 +142,20 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     Math.max(0, Math.round(next.caffeineLimit)),
     next.restingBurn != null ? Math.max(0, Math.round(next.restingBurn)) : null,
     next.theme,
+    next.language,
     next.accent,
     next.waterReminders ? 1 : 0,
     next.weekdayGoals ? JSON.stringify(next.weekdayGoals) : null,
+  );
+}
+
+/** Update only the language preference (without touching onboarding state). */
+export async function setLanguageSetting(language: Language): Promise<void> {
+  const db = getDb();
+  await db.runAsync(
+    `INSERT INTO settings (id, language) VALUES (1, ?)
+     ON CONFLICT(id) DO UPDATE SET language = excluded.language`,
+    language,
   );
 }
 
