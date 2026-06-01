@@ -22,11 +22,13 @@ import {
 } from '@/db/supplements';
 import { formatTime } from '@/db/dates';
 import { PrimaryButton } from '@/components/ui';
+import { useT } from '@/i18n';
 import { successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 
 export default function AddSupplementScreen() {
   const router = useRouter();
+  const { t } = useT();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ id?: string }>();
   const editingId = params.id ? Number(params.id) : null;
@@ -116,8 +118,8 @@ export default function AddSupplementScreen() {
         const created = await addSupplement(input);
         if (created.notificationIds.length === 0) {
           Alert.alert(
-            'Reminder not scheduled',
-            'The supplement was saved, but notifications are turned off. Enable notifications for Fuel in your device settings to get reminders.',
+            t('supp.reminderNotScheduled'),
+            t('supp.reminderNotScheduledMsg'),
           );
         }
       }
@@ -134,32 +136,32 @@ export default function AddSupplementScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Supplement name</Text>
+        <Text style={styles.label}>{t('supp.name')}</Text>
         <TextInput
           value={name}
           onChangeText={setName}
-          placeholder="e.g. Vitamin D"
+          placeholder={t('supp.namePlaceholder')}
           placeholderTextColor={colors.textMuted}
           style={styles.input}
           autoFocus
         />
 
-        <Text style={styles.label}>Dose (optional)</Text>
+        <Text style={styles.label}>{t('supp.doseOptional')}</Text>
         <TextInput
           value={dose}
           onChangeText={setDose}
-          placeholder="e.g. 1000 IU"
+          placeholder={t('supp.dosePlaceholder')}
           placeholderTextColor={colors.textMuted}
           style={styles.input}
         />
 
-        <Text style={styles.label}>Inventory (optional)</Text>
+        <Text style={styles.label}>{t('supp.inventoryOptional')}</Text>
         <View style={styles.inventoryRow}>
           <View style={styles.inventoryCell}>
             <TextInput
               value={stock}
               onChangeText={(t) => setStock(t.replace(/[^0-9]/g, ''))}
-              placeholder="Doses left"
+              placeholder={t('supp.dosesLeft')}
               placeholderTextColor={colors.textMuted}
               keyboardType="number-pad"
               style={styles.input}
@@ -169,7 +171,7 @@ export default function AddSupplementScreen() {
             <TextInput
               value={refillAt}
               onChangeText={(t) => setRefillAt(t.replace(/[^0-9]/g, ''))}
-              placeholder="Refill at"
+              placeholder={t('supp.refillAt')}
               placeholderTextColor={colors.textMuted}
               keyboardType="number-pad"
               style={styles.input}
@@ -177,7 +179,7 @@ export default function AddSupplementScreen() {
           </View>
         </View>
 
-        <Text style={styles.label}>Remind me daily at</Text>
+        <Text style={styles.label}>{t('supp.remindDaily')}</Text>
         {Platform.OS === 'android' && (
           <Pressable
             onPress={() => setShowPicker(true)}
@@ -204,7 +206,7 @@ export default function AddSupplementScreen() {
           </View>
         )}
 
-        <Text style={styles.label}>Repeat on</Text>
+        <Text style={styles.label}>{t('supp.repeatOn')}</Text>
         <View style={styles.weekdays}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => {
             const on = weekdays.length === 0 || weekdays.includes(i);
@@ -220,7 +222,7 @@ export default function AddSupplementScreen() {
           })}
         </View>
         <Text style={styles.repeatHint}>
-          {weekdays.length === 0 || weekdays.length === 7 ? 'Every day' : 'Selected days only'}
+          {weekdays.length === 0 || weekdays.length === 7 ? t('supp.everyDay') : t('supp.selectedDays')}
         </Text>
 
         <Pressable
@@ -238,7 +240,7 @@ export default function AddSupplementScreen() {
             size={20}
             color={secondEnabled ? colors.accent : colors.textMuted}
           />
-          <Text style={styles.secondLabel}>Add a second daily reminder</Text>
+          <Text style={styles.secondLabel}>{t('supp.secondReminder')}</Text>
         </Pressable>
         {secondEnabled ? (
           <>
@@ -270,7 +272,7 @@ export default function AddSupplementScreen() {
 
       <View style={styles.footer}>
         <PrimaryButton
-          label={isEditing ? 'Save changes' : 'Save & schedule reminder'}
+          label={isEditing ? t('common.save') : t('supp.saveSchedule')}
           onPress={save}
           disabled={!canSave}
           loading={saving}

@@ -13,6 +13,7 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { addCategory, deleteCategory, getCategories } from '@/db/categories';
 import { Card, Field, PrimaryButton } from '@/components/ui';
+import { useT } from '@/i18n';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 import type { MealCategory } from '@/types';
@@ -31,6 +32,7 @@ const ICONS = [
 ] as const;
 
 export default function CategoriesScreen() {
+  const { t } = useT();
   const [categories, setCategories] = useState<MealCategory[]>([]);
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<string>(ICONS[4]);
@@ -58,13 +60,13 @@ export default function CategoriesScreen() {
 
   const onDelete = (cat: MealCategory) => {
     if (categories.length <= 1) {
-      Alert.alert('Keep at least one', 'You need at least one meal category.');
+      Alert.alert(t('cat.keepOne'), t('cat.keepOneMsg'));
       return;
     }
-    Alert.alert('Delete category', `Delete "${cat.name}"? Meals filed under it move to "Other".`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('cat.deleteTitle'), t('cat.deleteMsg', { name: cat.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteCategory(cat.id);
@@ -80,14 +82,11 @@ export default function CategoriesScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.lead}>
-          Organize meals your way — rename the defaults by adding your own (e.g.
-          "Pre-workout", "Late snack").
-        </Text>
+        <Text style={styles.lead}>{t('cat.lead')}</Text>
 
         <Card style={styles.form}>
-          <Field label="New category" value={name} onChangeText={setName} placeholder="e.g. Pre-workout" />
-          <Text style={styles.iconLabel}>Icon</Text>
+          <Field label={t('cat.new')} value={name} onChangeText={setName} placeholder={t('cat.newPlaceholder')} />
+          <Text style={styles.iconLabel}>{t('cat.icon')}</Text>
           <View style={styles.icons}>
             {ICONS.map((ic) => (
               <Pressable
@@ -102,7 +101,7 @@ export default function CategoriesScreen() {
               </Pressable>
             ))}
           </View>
-          <PrimaryButton label="Add category" onPress={save} disabled={!name.trim()} loading={saving} />
+          <PrimaryButton label={t('cat.add')} onPress={save} disabled={!name.trim()} loading={saving} />
         </Card>
 
         <View style={styles.list}>
@@ -116,7 +115,7 @@ export default function CategoriesScreen() {
               <Text style={styles.itemName}>{cat.name}</Text>
             </Pressable>
           ))}
-          <Text style={styles.hint}>Long-press a category to delete it.</Text>
+          <Text style={styles.hint}>{t('cat.longPress')}</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

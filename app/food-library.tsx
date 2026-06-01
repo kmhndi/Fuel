@@ -17,11 +17,13 @@ import {
 import { addMeal } from '@/db/meals';
 import { Field, EmptyState } from '@/components/ui';
 import { mealTypeForNow } from '@/nutrition';
+import { useT } from '@/i18n';
 import { successFeedback, tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 import type { Food } from '@/types';
 
 export default function FoodLibraryScreen() {
+  const { t } = useT();
   const [query, setQuery] = useState('');
   const [foods, setFoods] = useState<Food[]>([]);
 
@@ -45,7 +47,7 @@ export default function FoodLibraryScreen() {
       mealType: mealTypeForNow(),
     });
     successFeedback();
-    Alert.alert('Logged', `Added ${food.name} to today.`);
+    Alert.alert(t('food.logged'), t('food.loggedMsg', { name: food.name }));
   };
 
   const onToggleFav = async (food: Food) => {
@@ -55,10 +57,10 @@ export default function FoodLibraryScreen() {
   };
 
   const onDelete = (food: Food) => {
-    Alert.alert('Remove from library', `Remove "${food.name}"? Past meals stay logged.`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('food.removeTitle'), t('food.removeMsg', { name: food.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: t('common.remove'),
         style: 'destructive',
         onPress: async () => {
           await deleteFood(food.id);
@@ -75,7 +77,7 @@ export default function FoodLibraryScreen() {
           label=""
           value={query}
           onChangeText={setQuery}
-          placeholder="Search foods"
+          placeholder={t('food.searchPlaceholder')}
           autoCorrect={false}
         />
       </View>
@@ -107,7 +109,7 @@ export default function FoodLibraryScreen() {
               <View style={styles.info}>
                 <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.meta}>
-                  {item.calories} kcal{macros ? ` · ${macros}` : ''} · used {item.useCount}×
+                  {item.calories} {t('common.kcal')}{macros ? ` · ${macros}` : ''} · {t('food.usedTimes', { n: item.useCount })}
                 </Text>
               </View>
               <Pressable onPress={() => onLogNow(item)} hitSlop={8} style={styles.add}>
@@ -119,8 +121,8 @@ export default function FoodLibraryScreen() {
         ListEmptyComponent={
           <EmptyState
             icon={<Ionicons name="fast-food-outline" size={40} color={colors.textMuted} />}
-            title={query ? 'No matches' : 'No saved foods yet'}
-            subtitle="Foods you log are saved here automatically for one-tap re-adding."
+            title={query ? t('food.emptyMatch') : t('food.empty')}
+            subtitle={t('food.emptySub')}
           />
         }
       />

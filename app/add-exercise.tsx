@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { addExercise } from '@/db/exercise';
 import { Field, PrimaryButton } from '@/components/ui';
+import { useT } from '@/i18n';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 
@@ -24,6 +25,7 @@ const PRESETS = [
 
 export default function AddExerciseScreen() {
   const router = useRouter();
+  const { t } = useT();
   const params = useLocalSearchParams<{ day?: string }>();
   const [name, setName] = useState('');
   const [calories, setCalories] = useState('');
@@ -50,27 +52,25 @@ export default function AddExerciseScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.lead}>
-          Logged exercise adds its calories back to today's budget.
-        </Text>
+        <Text style={styles.lead}>{t('ex.lead')}</Text>
 
         <Field
-          label="Activity"
+          label={t('ex.activity')}
           value={name}
           onChangeText={setName}
-          placeholder="e.g. Morning run"
+          placeholder={t('ex.activityPlaceholder')}
           autoFocus
         />
         <Field
-          label="Calories burned"
+          label={t('ex.caloriesBurned')}
           value={calories}
-          onChangeText={(t) => setCalories(t.replace(/[^0-9]/g, ''))}
+          onChangeText={(v) => setCalories(v.replace(/[^0-9]/g, ''))}
           placeholder="0"
           keyboardType="number-pad"
-          suffix="kcal"
+          suffix={t('common.kcal')}
         />
 
-        <Text style={styles.quickLabel}>Quick add</Text>
+        <Text style={styles.quickLabel}>{t('ex.quickAdd')}</Text>
         <View style={styles.chips}>
           {PRESETS.map((p) => (
             <Pressable
@@ -83,7 +83,7 @@ export default function AddExerciseScreen() {
               style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
             >
               <Text style={styles.chipLabel}>{p.label}</Text>
-              <Text style={styles.chipCals}>{p.calories} kcal</Text>
+              <Text style={styles.chipCals}>{p.calories} {t('common.kcal')}</Text>
             </Pressable>
           ))}
         </View>
@@ -91,7 +91,7 @@ export default function AddExerciseScreen() {
 
       <View style={styles.footer}>
         <PrimaryButton
-          label="Log exercise"
+          label={t('ex.log')}
           onPress={save}
           disabled={!canSave}
           loading={saving}

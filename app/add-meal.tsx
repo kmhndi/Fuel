@@ -18,6 +18,7 @@ import {
 import { getPresets } from '@/db/presets';
 import { getCategories } from '@/db/categories';
 import { Field, PrimaryButton, SegmentedControl } from '@/components/ui';
+import { useT } from '@/i18n';
 import { caloriesFromMacros, mealTypeForNow } from '@/nutrition';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
@@ -27,6 +28,7 @@ const TAG_PRESETS = ['Homemade', 'Eating out', 'Takeout', 'Cheat', 'Meal prep'];
 
 export default function AddMealScreen() {
   const router = useRouter();
+  const { t: tr } = useT();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ id?: string; day?: string; quick?: string }>();
   const editingId = params.id ? Number(params.id) : null;
@@ -60,7 +62,11 @@ export default function AddMealScreen() {
   // Load the meal being edited, or fall back to the add title.
   useEffect(() => {
     navigation.setOptions({
-      title: isQuick ? 'Quick calories' : isEditing ? 'Edit meal' : 'Log a meal',
+      title: isQuick
+        ? tr('title.quickCalories')
+        : isEditing
+          ? tr('title.editMeal')
+          : tr('title.logMeal'),
     });
     if (editingId !== null) {
       getMeal(editingId).then((meal) => {
@@ -195,17 +201,17 @@ export default function AddMealScreen() {
         ) : null}
 
         <Field
-          label={isQuick ? 'Name (optional)' : 'Food'}
+          label={isQuick ? tr('meal.nameOptional') : tr('meal.food')}
           value={name}
           onChangeText={setName}
-          placeholder={isQuick ? 'Quick add' : 'e.g. Greek yogurt with berries'}
+          placeholder={isQuick ? 'Quick add' : tr('meal.foodPlaceholder')}
           autoFocus={!isEditing && !isQuick}
         />
 
         {!isEditing && !isQuick && suggestions.length > 0 ? (
           <View style={styles.suggestions}>
             <Text style={styles.suggestionsLabel}>
-              {name.trim() ? 'Matches' : 'Recent & favorites'}
+              {name.trim() ? tr('meal.matches') : tr('meal.recentFav')}
             </Text>
             {suggestions.map((food) => (
               <Pressable
@@ -242,7 +248,7 @@ export default function AddMealScreen() {
         ) : null}
 
         <Field
-          label="Calories"
+          label={tr('onb.calories')}
           value={calories}
           onChangeText={(t) => {
             setCaloriesEdited(true);
@@ -250,17 +256,17 @@ export default function AddMealScreen() {
           }}
           placeholder="0"
           keyboardType="number-pad"
-          suffix="kcal"
+          suffix={tr('common.kcal')}
           autoFocus={isQuick}
         />
 
         {!isQuick ? (
           <>
-            <Text style={styles.macrosHeading}>Macros (optional)</Text>
+            <Text style={styles.macrosHeading}>{tr('meal.macrosOptional')}</Text>
             <View style={styles.macrosRow}>
           <View style={styles.macroCell}>
             <Field
-              label="Protein"
+              label={tr('meal.protein')}
               value={protein}
               onChangeText={(t) => setProtein(t.replace(/[^0-9.]/g, ''))}
               placeholder="0"
@@ -271,7 +277,7 @@ export default function AddMealScreen() {
           </View>
           <View style={styles.macroCell}>
             <Field
-              label="Carbs"
+              label={tr('meal.carbs')}
               value={carbs}
               onChangeText={(t) => setCarbs(t.replace(/[^0-9.]/g, ''))}
               placeholder="0"
@@ -282,7 +288,7 @@ export default function AddMealScreen() {
           </View>
           <View style={styles.macroCell}>
             <Field
-              label="Fat"
+              label={tr('meal.fat')}
               value={fat}
               onChangeText={(t) => setFat(t.replace(/[^0-9.]/g, ''))}
               placeholder="0"
@@ -294,16 +300,16 @@ export default function AddMealScreen() {
         </View>
             {macroCalories > 0 ? (
               <Text style={styles.macroHint}>
-                Macros add up to ~{macroCalories} kcal
+                {tr('meal.macrosTotal', { n: macroCalories })}
                 {num(carbs) > 0 && num(fiber) > 0
-                  ? ` · net carbs ${Math.max(0, num(carbs) - num(fiber))}g`
+                  ? tr('meal.netCarbs', { n: Math.max(0, num(carbs) - num(fiber)) })
                   : ''}
               </Text>
             ) : null}
             <View style={styles.macrosRow}>
               <View style={styles.macroCell}>
                 <Field
-                  label="Fiber"
+                  label={tr('meal.fiber')}
                   value={fiber}
                   onChangeText={(t) => setFiber(t.replace(/[^0-9.]/g, ''))}
                   placeholder="0"
@@ -314,7 +320,7 @@ export default function AddMealScreen() {
               </View>
               <View style={styles.macroCell}>
                 <Field
-                  label="Sugar"
+                  label={tr('meal.sugar')}
                   value={sugar}
                   onChangeText={(t) => setSugar(t.replace(/[^0-9.]/g, ''))}
                   placeholder="0"
@@ -327,7 +333,7 @@ export default function AddMealScreen() {
           </>
         ) : null}
 
-        <Text style={styles.tagLabel}>Tag (optional)</Text>
+        <Text style={styles.tagLabel}>{tr('meal.tagOptional')}</Text>
         <View style={styles.tags}>
           {TAG_PRESETS.map((t) => {
             const active = tag === t;
@@ -349,16 +355,16 @@ export default function AddMealScreen() {
         </View>
 
         <Field
-          label="Note (optional)"
+          label={tr('meal.noteOptional')}
           value={note}
           onChangeText={setNote}
-          placeholder="Anything worth remembering"
+          placeholder={tr('meal.notePlaceholder')}
         />
       </ScrollView>
 
       <View style={styles.footer}>
         <PrimaryButton
-          label={isEditing ? 'Save changes' : 'Log meal'}
+          label={isEditing ? tr('meal.saveChanges') : tr('meal.logMeal')}
           onPress={save}
           disabled={!canSave}
           loading={saving}

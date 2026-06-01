@@ -6,12 +6,14 @@ import { getUsedTags, searchMeals } from '@/db/meals';
 import { formatDayLabel } from '@/db/dates';
 import { Field, EmptyState } from '@/components/ui';
 import { mealTypeMeta } from '@/nutrition';
+import { useT } from '@/i18n';
 import { selectionFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 import type { Meal } from '@/types';
 
 export default function MealSearchScreen() {
   const router = useRouter();
+  const { t } = useT();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Meal[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -35,7 +37,7 @@ export default function MealSearchScreen() {
           label=""
           value={query}
           onChangeText={setQuery}
-          placeholder="Search meals, notes, tags"
+          placeholder={t('search.placeholder')}
           autoFocus
           autoCorrect={false}
         />
@@ -75,7 +77,7 @@ export default function MealSearchScreen() {
             <View style={styles.info}>
               <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
               <Text style={styles.meta}>
-                {formatDayLabel(item.day)} · {item.calories} kcal
+                {formatDayLabel(item.day)} · {item.calories} {t('common.kcal')}
                 {item.tag ? ` · ${item.tag}` : ''}
               </Text>
             </View>
@@ -84,8 +86,8 @@ export default function MealSearchScreen() {
         ListEmptyComponent={
           <EmptyState
             icon={<Ionicons name="search-outline" size={40} color={colors.textMuted} />}
-            title={query ? 'No matches' : 'Search your log'}
-            subtitle="Find any meal you've ever logged by name, note, or tag."
+            title={query ? t('search.emptyMatch') : t('search.empty')}
+            subtitle={t('search.emptySub')}
           />
         }
       />

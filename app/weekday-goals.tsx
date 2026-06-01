@@ -11,14 +11,17 @@ import { useRouter } from 'expo-router';
 import { getGoals, saveGoals } from '@/db/settings';
 import { useGoals } from '@/state/GoalsContext';
 import { Card, Field, PrimaryButton } from '@/components/ui';
+import { useT } from '@/i18n';
+import type { TKey } from '@/i18n/translations';
 import { successFeedback } from '@/haptics';
 import { colors, font, spacing } from '@/theme';
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_KEYS: TKey[] = ['days.sun', 'days.mon', 'days.tue', 'days.wed', 'days.thu', 'days.fri', 'days.sat'];
 
 export default function WeekdayGoalsScreen() {
   const router = useRouter();
   const { refresh } = useGoals();
+  const { t } = useT();
   const [base, setBase] = useState(2000);
   const [values, setValues] = useState<string[]>(['', '', '', '', '', '', '']);
   const [saving, setSaving] = useState(false);
@@ -53,24 +56,21 @@ export default function WeekdayGoalsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.lead}>
-          Set different calorie goals for specific days — handy for training vs
-          rest days. Leave a day blank to use your default of {base.toLocaleString()} kcal.
-        </Text>
+        <Text style={styles.lead}>{t('wkday.lead', { n: base.toLocaleString() })}</Text>
         <Card style={styles.card}>
-          {DAYS.map((d, i) => (
-            <View key={d} style={styles.row}>
-              <Text style={styles.day}>{d}</Text>
+          {DAY_KEYS.map((dk, i) => (
+            <View key={dk} style={styles.row}>
+              <Text style={styles.day}>{t(dk)}</Text>
               <View style={styles.field}>
                 <Field
                   label=""
                   value={values[i]}
-                  onChangeText={(t) =>
-                    setValues((prev) => prev.map((v, j) => (j === i ? t.replace(/[^0-9]/g, '') : v)))
+                  onChangeText={(val) =>
+                    setValues((prev) => prev.map((v, j) => (j === i ? val.replace(/[^0-9]/g, '') : v)))
                   }
                   placeholder={`${base}`}
                   keyboardType="number-pad"
-                  suffix="kcal"
+                  suffix={t('common.kcal')}
                 />
               </View>
             </View>
@@ -78,7 +78,7 @@ export default function WeekdayGoalsScreen() {
         </Card>
       </ScrollView>
       <View style={styles.footer}>
-        <PrimaryButton label="Save weekday goals" onPress={save} loading={saving} />
+        <PrimaryButton label={t('wkday.save')} onPress={save} loading={saving} />
       </View>
     </KeyboardAvoidingView>
   );

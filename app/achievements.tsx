@@ -4,31 +4,34 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getAchievementStats, type AchievementStats } from '@/db/achievements';
 import { useGoals } from '@/state/GoalsContext';
+import { useT } from '@/i18n';
+import type { TKey } from '@/i18n/translations';
 import { colors, font, radius, spacing } from '@/theme';
 
 interface Badge {
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  desc: string;
+  title: TKey;
+  desc: TKey;
   done: (s: AchievementStats) => boolean;
   progress: (s: AchievementStats) => string;
 }
 
 const BADGES: Badge[] = [
-  { icon: 'restaurant', title: 'First bite', desc: 'Log your first meal', done: (s) => s.totalMeals >= 1, progress: (s) => `${Math.min(s.totalMeals, 1)}/1` },
-  { icon: 'flame', title: 'On a roll', desc: '3-day logging streak', done: (s) => s.logStreak >= 3, progress: (s) => `${Math.min(s.logStreak, 3)}/3` },
-  { icon: 'bonfire', title: 'Week warrior', desc: '7-day logging streak', done: (s) => s.logStreak >= 7, progress: (s) => `${Math.min(s.logStreak, 7)}/7` },
-  { icon: 'calendar', title: 'Committed', desc: 'Log 30 different days', done: (s) => s.daysLogged >= 30, progress: (s) => `${Math.min(s.daysLogged, 30)}/30` },
-  { icon: 'checkmark-done', title: 'On target', desc: 'Hit your calorie goal 5 days', done: (s) => s.onTargetDays >= 5, progress: (s) => `${Math.min(s.onTargetDays, 5)}/5` },
-  { icon: 'trophy', title: 'Dialed in', desc: '20 on-target days', done: (s) => s.onTargetDays >= 20, progress: (s) => `${Math.min(s.onTargetDays, 20)}/20` },
-  { icon: 'water', title: 'Hydration hero', desc: 'Hit your water goal 7 days', done: (s) => s.waterGoalDays >= 7, progress: (s) => `${Math.min(s.waterGoalDays, 7)}/7` },
-  { icon: 'scale', title: 'Stepping up', desc: 'Log 5 weigh-ins', done: (s) => s.weighIns >= 5, progress: (s) => `${Math.min(s.weighIns, 5)}/5` },
-  { icon: 'happy', title: 'Self aware', desc: '5 daily check-ins', done: (s) => s.checkins >= 5, progress: (s) => `${Math.min(s.checkins, 5)}/5` },
-  { icon: 'restaurant-outline', title: 'Centurion', desc: 'Log 100 meals', done: (s) => s.totalMeals >= 100, progress: (s) => `${Math.min(s.totalMeals, 100)}/100` },
+  { icon: 'restaurant', title: 'ach.firstBite', desc: 'ach.firstBiteD', done: (s) => s.totalMeals >= 1, progress: (s) => `${Math.min(s.totalMeals, 1)}/1` },
+  { icon: 'flame', title: 'ach.onRoll', desc: 'ach.onRollD', done: (s) => s.logStreak >= 3, progress: (s) => `${Math.min(s.logStreak, 3)}/3` },
+  { icon: 'bonfire', title: 'ach.weekWarrior', desc: 'ach.weekWarriorD', done: (s) => s.logStreak >= 7, progress: (s) => `${Math.min(s.logStreak, 7)}/7` },
+  { icon: 'calendar', title: 'ach.committed', desc: 'ach.committedD', done: (s) => s.daysLogged >= 30, progress: (s) => `${Math.min(s.daysLogged, 30)}/30` },
+  { icon: 'checkmark-done', title: 'ach.onTargetT', desc: 'ach.onTargetD', done: (s) => s.onTargetDays >= 5, progress: (s) => `${Math.min(s.onTargetDays, 5)}/5` },
+  { icon: 'trophy', title: 'ach.dialedIn', desc: 'ach.dialedInD', done: (s) => s.onTargetDays >= 20, progress: (s) => `${Math.min(s.onTargetDays, 20)}/20` },
+  { icon: 'water', title: 'ach.hydration', desc: 'ach.hydrationD', done: (s) => s.waterGoalDays >= 7, progress: (s) => `${Math.min(s.waterGoalDays, 7)}/7` },
+  { icon: 'scale', title: 'ach.steppingUp', desc: 'ach.steppingUpD', done: (s) => s.weighIns >= 5, progress: (s) => `${Math.min(s.weighIns, 5)}/5` },
+  { icon: 'happy', title: 'ach.selfAware', desc: 'ach.selfAwareD', done: (s) => s.checkins >= 5, progress: (s) => `${Math.min(s.checkins, 5)}/5` },
+  { icon: 'restaurant-outline', title: 'ach.centurion', desc: 'ach.centurionD', done: (s) => s.totalMeals >= 100, progress: (s) => `${Math.min(s.totalMeals, 100)}/100` },
 ];
 
 export default function AchievementsScreen() {
   const { goals } = useGoals();
+  const { t } = useT();
   const [stats, setStats] = useState<AchievementStats | null>(null);
 
   useFocusEffect(
@@ -41,7 +44,7 @@ export default function AchievementsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.count}>{unlocked} of {BADGES.length} unlocked</Text>
+      <Text style={styles.count}>{t('ach.unlocked', { n: unlocked, total: BADGES.length })}</Text>
       <View style={styles.grid}>
         {BADGES.map((b) => {
           const done = stats ? b.done(stats) : false;
@@ -50,10 +53,10 @@ export default function AchievementsScreen() {
               <View style={[styles.iconWrap, done && styles.iconWrapDone]}>
                 <Ionicons name={b.icon} size={26} color={done ? colors.bg : colors.textMuted} />
               </View>
-              <Text style={[styles.title, done && styles.titleDone]} numberOfLines={1}>{b.title}</Text>
-              <Text style={styles.desc} numberOfLines={2}>{b.desc}</Text>
+              <Text style={[styles.title, done && styles.titleDone]} numberOfLines={1}>{t(b.title)}</Text>
+              <Text style={styles.desc} numberOfLines={2}>{t(b.desc)}</Text>
               <Text style={[styles.progress, done && { color: colors.accent }]}>
-                {done ? 'Unlocked' : stats ? b.progress(stats) : ''}
+                {done ? t('ach.unlockedTag') : stats ? b.progress(stats) : ''}
               </Text>
             </View>
           );

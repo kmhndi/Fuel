@@ -18,6 +18,7 @@ import {
   setTaken,
 } from '@/db/supplements';
 import { formatTime } from '@/db/dates';
+import { useT } from '@/i18n';
 import { Card, EmptyState } from '@/components/ui';
 import { selectionFeedback, successFeedback, tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
@@ -26,6 +27,7 @@ import type { SupplementStatus } from '@/types';
 export default function SupplementsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   const [items, setItems] = useState<SupplementStatus[]>([]);
 
   const load = useCallback(async () => {
@@ -70,20 +72,20 @@ export default function SupplementsScreen() {
     (item: SupplementStatus) => {
       Alert.alert(item.name, undefined, [
         {
-          text: 'Edit',
+          text: t('common.edit'),
           onPress: () => router.push(`/add-supplement?id=${item.id}`),
         },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Delete supplement',
-              `Stop tracking "${item.name}"? This also clears its history.`,
+              t('supp.deleteTitle'),
+              t('supp.deleteMsg', { name: item.name }),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                  text: 'Delete',
+                  text: t('common.delete'),
                   style: 'destructive',
                   onPress: async () => {
                     await deleteSupplement(item);
@@ -94,10 +96,10 @@ export default function SupplementsScreen() {
             );
           },
         },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
       ]);
     },
-    [router, load],
+    [router, load, t],
   );
 
   const onMarkAll = useCallback(async () => {
@@ -136,8 +138,8 @@ export default function SupplementsScreen() {
             icon={
               <Ionicons name="medkit-outline" size={40} color={colors.textMuted} />
             }
-            title="No supplements yet"
-            subtitle="Add a supplement to get a daily reminder, then check it off to build a streak."
+            title={t('supp.empty')}
+            subtitle={t('supp.emptySub')}
           />
         }
       />
@@ -169,28 +171,29 @@ function SummaryCard({
   total: number;
   onMarkAll: () => void;
 }) {
+  const { t } = useT();
   const pct = total > 0 ? taken / total : 0;
   const allDone = taken === total && total > 0;
   return (
     <Card style={styles.summary}>
       <View style={styles.summaryHeader}>
-        <Text style={styles.summaryTitle}>Today</Text>
+        <Text style={styles.summaryTitle}>{t('supp.todayHeader')}</Text>
         <Text style={[styles.summaryCount, allDone && { color: colors.accent }]}>
-          {taken} of {total} taken
+          {t('supp.takenOf', { taken, total })}
         </Text>
       </View>
       <View style={styles.summaryTrack}>
         <View style={[styles.summaryFill, { width: `${pct * 100}%` }]} />
       </View>
       {allDone ? (
-        <Text style={styles.summaryDone}>All caught up — nice. 🎉</Text>
+        <Text style={styles.summaryDone}>{t('supp.allDone')}</Text>
       ) : (
         <Pressable
           onPress={onMarkAll}
           style={({ pressed }) => [styles.markAll, pressed && { opacity: 0.7 }]}
         >
           <Ionicons name="checkmark-done" size={16} color={colors.accent} />
-          <Text style={styles.markAllText}>Mark all taken</Text>
+          <Text style={styles.markAllText}>{t('supp.markAll')}</Text>
         </Pressable>
       )}
     </Card>
@@ -208,6 +211,7 @@ function SupplementRow({
   onToggleReminder: () => void;
   onLongPress: () => void;
 }) {
+  const { t } = useT();
   return (
     <Pressable
       onPress={onToggleTaken}
@@ -239,14 +243,17 @@ function SupplementRow({
               ? ` & ${formatTime(item.hour2, item.minute2)}`
               : ''}
           </Text>
-          {item.weekdays ? <Text style={styles.meta}>· {item.weekdays.length}×/wk</Text> : null}
+          {item.weekdays ? (
+            <Text style={styles.meta}>· {t('supp.perWeek', { n: item.weekdays.length })}</Text>
+          ) : null}
           {item.dose ? <Text style={styles.meta}>· {item.dose}</Text> : null}
           {item.streak > 0 ? (
             <Text style={styles.streak}>🔥 {item.streak}</Text>
           ) : null}
           {item.stock != null ? (
             <Text style={[styles.meta, item.stock <= item.refillAt && styles.lowStock]}>
-              · {item.stock} left{item.stock <= item.refillAt ? ' • refill' : ''}
+              · {t('supp.left', { n: item.stock })}
+              {item.stock <= item.refillAt ? ` • ${t('supp.refill')}` : ''}
             </Text>
           ) : null}
         </View>

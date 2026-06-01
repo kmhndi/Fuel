@@ -21,13 +21,24 @@ import {
   kgToDisplay,
   tdee,
 } from '@/health';
+import { useT } from '@/i18n';
+import type { TKey } from '@/i18n/translations';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 import type { Sex } from '@/types';
 
+const ACTIVITY_I18N: Record<number, { label: TKey; hint: TKey }> = {
+  1.2: { label: 'calc.sedentary', hint: 'calc.sedentaryH' },
+  1.375: { label: 'calc.lightAct', hint: 'calc.lightActH' },
+  1.55: { label: 'calc.moderate', hint: 'calc.moderateH' },
+  1.725: { label: 'calc.active', hint: 'calc.activeH' },
+  1.9: { label: 'calc.veryActive', hint: 'calc.veryActiveH' },
+};
+
 export default function GoalCalculatorScreen() {
   const router = useRouter();
   const { goals, refresh } = useGoals();
+  const { t } = useT();
   const unit = goals.weightUnit;
 
   const [sex, setSex] = useState<Sex>('male');
@@ -75,38 +86,36 @@ export default function GoalCalculatorScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.lead}>
-          Estimate your daily calorie burn with the Mifflin-St Jeor formula, then
-          pick a target.
-        </Text>
+        <Text style={styles.lead}>{t('calc.lead')}</Text>
 
         <Card style={styles.card}>
-          <Text style={styles.label}>Sex</Text>
+          <Text style={styles.label}>{t('calc.sex')}</Text>
           <SegmentedControl<Sex>
             value={sex}
             onChange={setSex}
             options={[
-              { value: 'male', label: 'Male' },
-              { value: 'female', label: 'Female' },
+              { value: 'male', label: t('calc.male') },
+              { value: 'female', label: t('calc.female') },
             ]}
           />
           <View style={styles.row}>
             <View style={styles.cell}>
-              <Field label="Age" value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="yr" />
+              <Field label={t('calc.age')} value={age} onChangeText={(v) => setAge(v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="yr" />
             </View>
             <View style={styles.cell}>
-              <Field label="Height" value={height} onChangeText={(t) => setHeight(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="cm" />
+              <Field label={t('calc.height')} value={height} onChangeText={(v) => setHeight(v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="cm" />
             </View>
             <View style={styles.cell}>
-              <Field label="Weight" value={weight} onChangeText={(t) => setWeight(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix={unit} />
+              <Field label={t('calc.weightField')} value={weight} onChangeText={(v) => setWeight(v.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix={unit} />
             </View>
           </View>
         </Card>
 
         <Card style={styles.card}>
-          <Text style={styles.label}>Activity level</Text>
+          <Text style={styles.label}>{t('calc.activity')}</Text>
           {ACTIVITY_LEVELS.map((lvl) => {
             const active = lvl.value === activity;
+            const meta = ACTIVITY_I18N[lvl.value];
             return (
               <Pressable
                 key={lvl.value}
@@ -122,9 +131,9 @@ export default function GoalCalculatorScreen() {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.activityLabel, active && { color: colors.accent }]}>
-                    {lvl.label}
+                    {meta ? t(meta.label) : lvl.label}
                   </Text>
-                  <Text style={styles.activityHint}>{lvl.hint}</Text>
+                  <Text style={styles.activityHint}>{meta ? t(meta.hint) : lvl.hint}</Text>
                 </View>
                 {active ? <Ionicons name="checkmark-circle" size={20} color={colors.accent} /> : null}
               </Pressable>
@@ -135,14 +144,14 @@ export default function GoalCalculatorScreen() {
         {targets ? (
           <Card style={styles.card}>
             <Text style={styles.tdee}>
-              Maintenance ≈ {result!.toLocaleString()} kcal/day
+              {t('calc.maintenance', { n: result!.toLocaleString() })}
             </Text>
-            <TargetRow label="Lose weight" sub="−500 kcal" value={targets.lose} onPress={() => apply(targets.lose)} />
-            <TargetRow label="Maintain" sub="match burn" value={targets.maintain} onPress={() => apply(targets.maintain)} />
-            <TargetRow label="Gain weight" sub="+300 kcal" value={targets.gain} onPress={() => apply(targets.gain)} />
+            <TargetRow label={t('calc.lose')} sub={t('calc.loseSub')} value={targets.lose} onPress={() => apply(targets.lose)} />
+            <TargetRow label={t('calc.maintain')} sub={t('calc.maintainSub')} value={targets.maintain} onPress={() => apply(targets.maintain)} />
+            <TargetRow label={t('calc.gain')} sub={t('calc.gainSub')} value={targets.gain} onPress={() => apply(targets.gain)} />
           </Card>
         ) : (
-          <Text style={styles.fillHint}>Fill in age, height and weight to see your estimate.</Text>
+          <Text style={styles.fillHint}>{t('calc.fillHint')}</Text>
         )}
       </ScrollView>
     </KeyboardAvoidingView>

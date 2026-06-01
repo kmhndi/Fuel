@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { getCheckIn, saveCheckIn } from '@/db/checkins';
 import { toDayKey } from '@/db/dates';
 import { Field, PrimaryButton } from '@/components/ui';
+import { useT } from '@/i18n';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 
@@ -19,6 +20,7 @@ const MOODS = ['😟', '🙁', '😐', '🙂', '😄'];
 
 export default function CheckInScreen() {
   const router = useRouter();
+  const { t } = useT();
   const [mood, setMood] = useState<number | null>(null);
   const [energy, setEnergy] = useState<number | null>(null);
   const [note, setNote] = useState('');
@@ -44,7 +46,7 @@ export default function CheckInScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>How's your mood?</Text>
+        <Text style={styles.label}>{t('checkin.mood')}</Text>
         <View style={styles.moods}>
           {MOODS.map((emoji, i) => (
             <Pressable
@@ -60,7 +62,7 @@ export default function CheckInScreen() {
           ))}
         </View>
 
-        <Text style={styles.label}>Energy level</Text>
+        <Text style={styles.label}>{t('checkin.energy')}</Text>
         <View style={styles.energy}>
           {[1, 2, 3, 4, 5].map((n) => (
             <Pressable
@@ -79,15 +81,15 @@ export default function CheckInScreen() {
         </View>
 
         <Field
-          label="Note (optional)"
+          label={t('checkin.note')}
           value={note}
           onChangeText={setNote}
-          placeholder="How was the day?"
+          placeholder={t('checkin.notePlaceholder')}
         />
       </ScrollView>
 
       <View style={styles.footer}>
-        <PrimaryButton label="Save check-in" onPress={save} />
+        <PrimaryButton label={t('checkin.save')} onPress={save} />
       </View>
     </KeyboardAvoidingView>
   );

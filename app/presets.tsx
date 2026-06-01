@@ -13,11 +13,13 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { addPreset, deletePreset, getPresets } from '@/db/presets';
 import { Card, EmptyState, Field, PrimaryButton } from '@/components/ui';
+import { useT } from '@/i18n';
 import { successFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 import type { Preset } from '@/types';
 
 export default function PresetsScreen() {
+  const { t } = useT();
   const [presets, setPresets] = useState<Preset[]>([]);
   const [name, setName] = useState('');
   const [calories, setCalories] = useState('');
@@ -55,10 +57,10 @@ export default function PresetsScreen() {
   };
 
   const onDelete = (preset: Preset) => {
-    Alert.alert('Delete preset', `Remove "${preset.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('preset.deleteTitle'), t('preset.deleteMsg', { name: preset.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           await deletePreset(preset.id);
@@ -74,22 +76,19 @@ export default function PresetsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.lead}>
-          Build your own one-tap foods — they show up as quick-adds when logging
-          a meal.
-        </Text>
+        <Text style={styles.lead}>{t('preset.lead')}</Text>
 
         <Card style={styles.form}>
-          <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Protein shake" />
+          <Field label={t('preset.name')} value={name} onChangeText={setName} placeholder={t('preset.namePlaceholder')} />
           <View style={styles.row}>
             <View style={styles.cell}>
-              <Field label="Calories" value={calories} onChangeText={(t) => setCalories(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="kcal" />
+              <Field label={t('preset.calories')} value={calories} onChangeText={(v) => setCalories(v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix={t('common.kcal')} />
             </View>
             <View style={styles.cell}>
-              <Field label="Protein" value={protein} onChangeText={(t) => setProtein(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix="g" />
+              <Field label={t('preset.protein')} value={protein} onChangeText={(v) => setProtein(v.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix="g" />
             </View>
           </View>
-          <PrimaryButton label="Add preset" onPress={save} disabled={!canSave} loading={saving} />
+          <PrimaryButton label={t('preset.add')} onPress={save} disabled={!canSave} loading={saving} />
         </Card>
 
         {presets.length > 0 ? (
@@ -103,19 +102,19 @@ export default function PresetsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.itemName}>{p.name}</Text>
                   <Text style={styles.itemMeta}>
-                    {p.calories} kcal{p.protein ? ` · P ${Math.round(p.protein)}` : ''}
+                    {p.calories} {t('common.kcal')}{p.protein ? ` · P ${Math.round(p.protein)}` : ''}
                   </Text>
                 </View>
                 <Ionicons name="flash" size={18} color={colors.accent} />
               </Pressable>
             ))}
-            <Text style={styles.hint}>Long-press a preset to delete it.</Text>
+            <Text style={styles.hint}>{t('preset.longPress')}</Text>
           </View>
         ) : (
           <EmptyState
             icon={<Ionicons name="flash-outline" size={40} color={colors.textMuted} />}
-            title="No presets yet"
-            subtitle="Add your go-to foods above for instant logging."
+            title={t('preset.empty')}
+            subtitle={t('preset.emptySub')}
           />
         )}
       </ScrollView>

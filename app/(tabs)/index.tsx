@@ -137,31 +137,31 @@ export default function TodayScreen() {
   const onCopyYesterday = useCallback(() => {
     const from = shiftDay(day, -1);
     Alert.alert(
-      'Copy yesterday',
-      `Copy all meals from ${formatDayLabel(from)} into ${formatDayLabel(day)}?`,
+      t('today.copyTitle'),
+      t('today.copyMsg', { from: formatDayLabel(from), to: formatDayLabel(day) }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Copy',
+          text: t('today.copy'),
           onPress: async () => {
             const n = await copyMealsFromDay(from, day);
             if (n > 0) successFeedback();
             load();
             if (n === 0) {
-              Alert.alert('Nothing to copy', `No meals were logged ${formatDayLabel(from).toLowerCase()}.`);
+              Alert.alert(t('today.nothingCopy'), t('today.nothingCopyMsg'));
             }
           },
         },
       ],
     );
-  }, [day, load]);
+  }, [day, load, t]);
 
   const onMealActions = useCallback(
     (meal: Meal) => {
       Alert.alert(meal.name, undefined, [
-        { text: 'Edit', onPress: () => router.push(`/add-meal?id=${meal.id}`) },
+        { text: t('common.edit'), onPress: () => router.push(`/add-meal?id=${meal.id}`) },
         {
-          text: 'Duplicate',
+          text: t('today.duplicate'),
           onPress: async () => {
             await duplicateMeal(meal);
             tapFeedback();
@@ -169,17 +169,17 @@ export default function TodayScreen() {
           },
         },
         {
-          text: 'Remove',
+          text: t('common.remove'),
           style: 'destructive',
           onPress: async () => {
             await deleteMeal(meal.id);
             load();
           },
         },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
       ]);
     },
-    [router, load],
+    [router, load, t],
   );
 
   const dayCalorieGoal = effectiveCalorieGoal(goals, day);

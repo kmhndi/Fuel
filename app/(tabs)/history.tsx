@@ -8,6 +8,7 @@ import { getDailyAdherence, getRecentAdherence } from '@/db/supplements';
 import { getWaterTotals } from '@/db/water';
 import { getLatestWeight } from '@/db/weights';
 import { useGoals } from '@/state/GoalsContext';
+import { useT } from '@/i18n';
 import { Card, EmptyState, SegmentedControl } from '@/components/ui';
 import { kgToDisplay } from '@/health';
 import { movingAverage } from '@/stats';
@@ -19,6 +20,7 @@ import type { WeightEntry } from '@/types';
 type Range = '7' | '14' | '30';
 
 export default function TrendsScreen() {
+  const { t: tr } = useT();
   const router = useRouter();
   const { goals } = useGoals();
   const [range, setRange] = useState<Range>('14');
@@ -70,33 +72,33 @@ export default function TrendsScreen() {
           setRange(r);
         }}
         options={[
-          { value: '7', label: '7 days' },
-          { value: '14', label: '14 days' },
-          { value: '30', label: '30 days' },
+          { value: '7', label: tr('trends.days', { n: 7 }) },
+          { value: '14', label: tr('trends.days', { n: 14 }) },
+          { value: '30', label: tr('trends.days', { n: 30 }) },
         ]}
       />
 
       {!hasData ? (
         <EmptyState
           icon={<Ionicons name="stats-chart-outline" size={40} color={colors.textMuted} />}
-          title="No history yet"
-          subtitle="Log a few meals and your trends will appear here."
+          title={tr('trends.noHistory')}
+          subtitle={tr('trends.noHistorySub')}
         />
       ) : (
         <>
           <View style={styles.statsRow}>
-            <Stat label="Avg / day" value={avgCalories.toLocaleString()} unit="kcal" />
-            <Stat label="On target" value={`${onTargetDays}`} unit={`/ ${totals.length}`} />
+            <Stat label={tr('trends.avgDay')} value={avgCalories.toLocaleString()} unit={tr('common.kcal')} />
+            <Stat label={tr('trends.onTarget')} value={`${onTargetDays}`} unit={`/ ${totals.length}`} />
           </View>
           <View style={styles.statsRow}>
-            <Stat label="Avg protein" value={`${avgProtein}`} unit="g" accent={macroColors.protein} />
-            <Stat label="Avg water" value={avgWater} unit="glasses" accent="#38BDF8" />
+            <Stat label={tr('trends.avgProtein')} value={`${avgProtein}`} unit="g" accent={macroColors.protein} />
+            <Stat label={tr('trends.avgWater')} value={avgWater} unit={tr('trends.glasses')} accent="#38BDF8" />
           </View>
 
           <Card>
-            <Text style={styles.chartTitle}>Calories · last {totals.length} days</Text>
+            <Text style={styles.chartTitle}>{tr('trends.caloriesTitle', { n: totals.length })}</Text>
             <Text style={styles.chartLegend}>
-              Goal {goal.toLocaleString()} · bars turn amber when over
+              {tr('trends.caloriesLegend', { goal: goal.toLocaleString() })}
             </Text>
             <View style={styles.plot}>
               <View
@@ -136,13 +138,13 @@ export default function TrendsScreen() {
                 </Svg>
               ) : null}
             </View>
-            <Text style={styles.maLegend}>White line = 7-day average</Text>
+            <Text style={styles.maLegend}>{tr('trends.maLegend')}</Text>
           </Card>
 
           {dots.some((d) => d.total > 0) ? (
             <Card>
               <View style={styles.cardHeader}>
-                <Text style={styles.chartTitle}>Supplement adherence</Text>
+                <Text style={styles.chartTitle}>{tr('trends.adherence')}</Text>
                 <Text style={styles.adherencePct}>{adherencePct}%</Text>
               </View>
               <View style={styles.dots}>
@@ -162,11 +164,11 @@ export default function TrendsScreen() {
           >
             <Ionicons name="scale-outline" size={22} color={colors.accent} />
             <View style={styles.linkInfo}>
-              <Text style={styles.linkTitle}>Weight</Text>
+              <Text style={styles.linkTitle}>{tr('trends.weight')}</Text>
               <Text style={styles.linkSub}>
                 {weight
                   ? `${kgToDisplay(weight.kg, goals.weightUnit).toFixed(1)} ${goals.weightUnit}`
-                  : 'Not logged yet'}
+                  : tr('trends.notLogged')}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />

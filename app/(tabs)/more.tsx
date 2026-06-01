@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import Constants from 'expo-constants';
 import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useT } from '@/i18n';
 import { tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 
@@ -12,26 +13,27 @@ interface Item {
   href: Href;
 }
 
-const ITEMS: Item[] = [
-  { icon: 'scale-outline', title: 'Weight & body', subtitle: 'Weigh-ins, measurements, goal weight', href: '/weight' },
-  { icon: 'search-outline', title: 'Search meals', subtitle: 'Find anything you have logged', href: '/meal-search' },
-  { icon: 'fast-food-outline', title: 'Food library', subtitle: 'Manage your saved foods & favorites', href: '/food-library' },
-  { icon: 'calendar-outline', title: 'Calendar', subtitle: 'Heatmap of your logging & goals', href: '/calendar' },
-  { icon: 'trophy-outline', title: 'Achievements', subtitle: 'Badges and milestones', href: '/achievements' },
-  { icon: 'share-social-outline', title: 'Share today', subtitle: 'A shareable summary image', href: '/share-day' },
-  { icon: 'flash-outline', title: 'Quick-add presets', subtitle: 'Your one-tap foods', href: '/presets' },
-  { icon: 'pricetags-outline', title: 'Meal categories', subtitle: 'Customize your meal types', href: '/categories' },
-  { icon: 'calculator-outline', title: 'Goal calculator', subtitle: 'Estimate your calorie target (TDEE)', href: '/goal-calculator' },
-  { icon: 'options-outline', title: 'Goals & settings', subtitle: 'Targets, units, water, backup', href: '/settings' },
-];
-
 export default function MoreScreen() {
   const router = useRouter();
+  const { t } = useT();
   const version = Constants.expoConfig?.version ?? '1.0.0';
+
+  const items: Item[] = [
+    { icon: 'scale-outline', title: t('title.weight'), subtitle: t('more.subWeight'), href: '/weight' },
+    { icon: 'search-outline', title: t('title.searchMeals'), subtitle: t('more.subSearch'), href: '/meal-search' },
+    { icon: 'fast-food-outline', title: t('title.foodLibrary'), subtitle: t('more.subFood'), href: '/food-library' },
+    { icon: 'calendar-outline', title: t('title.calendar'), subtitle: t('more.subCalendar'), href: '/calendar' },
+    { icon: 'trophy-outline', title: t('title.achievements'), subtitle: t('more.subAch'), href: '/achievements' },
+    { icon: 'share-social-outline', title: t('more.shareToday'), subtitle: t('more.subShare'), href: '/share-day' },
+    { icon: 'flash-outline', title: t('title.presets'), subtitle: t('more.subPresets'), href: '/presets' },
+    { icon: 'pricetags-outline', title: t('title.categories'), subtitle: t('more.subCategories'), href: '/categories' },
+    { icon: 'calculator-outline', title: t('title.goalCalculator'), subtitle: t('more.subCalc'), href: '/goal-calculator' },
+    { icon: 'options-outline', title: t('title.settings'), subtitle: t('more.subSettings'), href: '/settings' },
+  ];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {ITEMS.map((item) => (
+      {items.map((item) => (
         <Pressable
           key={item.title}
           onPress={() => {
@@ -53,9 +55,7 @@ export default function MoreScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Fuel ⚡</Text>
-        <Text style={styles.footerSub}>
-          v{version} · private & on-device. No account, no cloud.
-        </Text>
+        <Text style={styles.footerSub}>v{version} · {t('more.footer')}</Text>
       </View>
     </ScrollView>
   );

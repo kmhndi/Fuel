@@ -235,7 +235,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>{t('set.dailyGoals')}</Text>
         <Card style={styles.card}>
           <Field
-            label="Calories"
+            label={t('onb.calories')}
             value={calorieGoal}
             onChangeText={(t) => setCalorieGoal(t.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
@@ -243,37 +243,37 @@ export default function SettingsScreen() {
           />
           <View style={styles.row}>
             <View style={styles.cell}>
-              <Field label="Protein" value={proteinGoal} onChangeText={(t) => setProteinGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
+              <Field label={t('meal.protein')} value={proteinGoal} onChangeText={(t) => setProteinGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
             </View>
             <View style={styles.cell}>
-              <Field label="Carbs" value={carbGoal} onChangeText={(t) => setCarbGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
+              <Field label={t('meal.carbs')} value={carbGoal} onChangeText={(t) => setCarbGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
             </View>
             <View style={styles.cell}>
-              <Field label="Fat" value={fatGoal} onChangeText={(t) => setFatGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
+              <Field label={t('meal.fat')} value={fatGoal} onChangeText={(t) => setFatGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="g" />
             </View>
           </View>
           {macroCalories > 0 ? (
             <Text style={[styles.hint, { color: macroColors.protein }]}>
-              Macro goals total ~{macroCalories.toLocaleString()} kcal
+              {t('set.macroTotal', { n: macroCalories.toLocaleString() })}
             </Text>
           ) : null}
-          <GhostButton label="Not sure? Use the goal calculator" onPress={() => router.push('/goal-calculator')} />
-          <GhostButton label="Set per-day goals (training vs rest)" onPress={() => router.push('/weekday-goals')} />
+          <GhostButton label={t('set.calcLink')} onPress={() => router.push('/goal-calculator')} />
+          <GhostButton label={t('set.weekdayLink')} onPress={() => router.push('/weekday-goals')} />
         </Card>
 
         <Text style={styles.sectionTitle}>{t('set.water')}</Text>
         <Card style={styles.row}>
           <View style={styles.cell}>
-            <Field label="Daily goal" value={waterGoal} onChangeText={(t) => setWaterGoal(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="glasses" />
+            <Field label={t('set.waterDailyGoal')} value={waterGoal} onChangeText={(v) => setWaterGoal(v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix={t('set.glasses')} />
           </View>
           <View style={styles.cell}>
-            <Field label="Glass size" value={glassMl} onChangeText={(t) => setGlassMl(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="ml" />
+            <Field label={t('set.glassSize')} value={glassMl} onChangeText={(t) => setGlassMl(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="ml" />
           </View>
         </Card>
 
         <Text style={styles.sectionTitle}>{t('set.units')}</Text>
         <Card>
-          <Text style={styles.unitLabel}>Weight</Text>
+          <Text style={styles.unitLabel}>{t('set.weight')}</Text>
           <SegmentedControl<WeightUnit>
             value={weightUnit}
             onChange={setWeightUnit}
@@ -338,17 +338,17 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>{t('set.targets')}</Text>
         <Card style={styles.row}>
           <View style={styles.cell}>
-            <Field label="Goal weight" value={goalWeight} onChangeText={(t) => setGoalWeight(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix={weightUnit} />
+            <Field label={t('set.goalWeight')} value={goalWeight} onChangeText={(t) => setGoalWeight(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix={weightUnit} />
           </View>
           <View style={styles.cell}>
-            <Field label="Caffeine limit" value={caffeineLimit} onChangeText={(t) => setCaffeineLimit(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="mg" />
+            <Field label={t('set.caffeineLimit')} value={caffeineLimit} onChangeText={(t) => setCaffeineLimit(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" suffix="mg" />
           </View>
         </Card>
 
         <Text style={styles.sectionTitle}>{t('set.energy')}</Text>
         <Card style={styles.card}>
           <Field
-            label="Resting burn (RMR)"
+            label={t('set.restingBurn')}
             value={restingBurn}
             onChangeText={(t) => setRestingBurn(t.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
@@ -356,8 +356,7 @@ export default function SettingsScreen() {
             placeholder="Auto from profile"
           />
           <Text style={styles.privacy}>
-            Used with exercise to show your daily deficit or surplus (eaten −
-            burned). Leave blank to estimate it from your goal-calculator profile.
+            {t('set.restingLead')}
           </Text>
         </Card>
 
@@ -366,14 +365,14 @@ export default function SettingsScreen() {
           <View style={styles.notifRow}>
             <Ionicons name={notifGranted ? 'notifications' : 'notifications-off-outline'} size={22} color={notifGranted ? colors.accent : colors.danger} />
             <Text style={styles.notifText}>
-              {notifGranted ? 'Reminders are enabled.' : 'Reminders are turned off.'}
+              {notifGranted ? t('set.notifEnabled') : t('set.notifDisabled')}
             </Text>
           </View>
-          {!notifGranted ? <GhostButton label="Enable reminders" onPress={enableNotifications} /> : null}
+          {!notifGranted ? <GhostButton label={t('set.enableReminders')} onPress={enableNotifications} /> : null}
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.switchTitle}>Water reminders</Text>
-              <Text style={styles.switchSub}>Nudges through the day (10am–8pm)</Text>
+              <Text style={styles.switchTitle}>{t('set.waterReminders')}</Text>
+              <Text style={styles.switchSub}>{t('set.waterRemindersSub')}</Text>
             </View>
             <Switch
               value={waterReminders}
@@ -387,14 +386,14 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>{t('set.backup')}</Text>
         <Card style={styles.card}>
           <Text style={styles.privacy}>
-            Export a copy of everything as a file, or restore from one. Great before reinstalling.
+            {t('set.backupLead')}
           </Text>
           <View style={styles.row}>
             <View style={styles.cell}>
-              <GhostButton label="Export" onPress={onExport} />
+              <GhostButton label={t('set.export')} onPress={onExport} />
             </View>
             <View style={styles.cell}>
-              <GhostButton label="Restore" onPress={onImport} />
+              <GhostButton label={t('set.restore')} onPress={onImport} />
             </View>
           </View>
         </Card>
@@ -402,9 +401,9 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>{t('set.data')}</Text>
         <Card>
           <Text style={styles.privacy}>
-            Everything stays on this device — no account, no cloud, no tracking.
+            {t('set.privacyLead')}
           </Text>
-          <GhostButton label="Clear all data" tone="danger" onPress={confirmClear} />
+          <GhostButton label={t('set.clearAll')} tone="danger" onPress={confirmClear} />
         </Card>
 
         <Text style={styles.about}>Fuel v{version} · made for me, by me ⚡</Text>

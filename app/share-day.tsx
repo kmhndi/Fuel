@@ -10,6 +10,7 @@ import { getExerciseTotal } from '@/db/exercise';
 import { getSupplementsWithStatus } from '@/db/supplements';
 import { toDayKey } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
+import { useT } from '@/i18n';
 import { PrimaryButton } from '@/components/ui';
 import { effectiveCalorieGoal } from '@/health';
 import { macroColors } from '@/nutrition';
@@ -17,6 +18,7 @@ import { colors, font, radius, spacing } from '@/theme';
 
 export default function ShareDayScreen() {
   const { goals } = useGoals();
+  const { t, lang } = useT();
   const cardRef = useRef<View>(null);
   const [data, setData] = useState({
     calories: 0,
@@ -67,17 +69,16 @@ export default function ShareDayScreen() {
         Alert.alert('Saved', 'Sharing is not available on this device.');
       }
     } catch {
-      Alert.alert('Could not share', 'Something went wrong creating the image.');
+      Alert.alert(t('share.couldNotShare'), t('share.couldNotShareMsg'));
     } finally {
       setSharing(false);
     }
   };
 
-  const dateLabel = new Date(`${today}T00:00:00`).toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const dateLabel = new Date(`${today}T00:00:00`).toLocaleDateString(
+    lang === 'ar' ? 'ar' : undefined,
+    { weekday: 'long', month: 'long', day: 'numeric' },
+  );
   const remaining = goal - data.calories;
 
   return (
@@ -92,29 +93,33 @@ export default function ShareDayScreen() {
 
         <View style={styles.bigRow}>
           <Text style={styles.bigValue}>{data.calories.toLocaleString()}</Text>
-          <Text style={styles.bigUnit}>/ {goal.toLocaleString()} kcal</Text>
+          <Text style={styles.bigUnit}>/ {goal.toLocaleString()} {t('common.kcal')}</Text>
         </View>
         <Text style={styles.remaining}>
-          {remaining >= 0 ? `${remaining.toLocaleString()} kcal under goal` : `${Math.abs(remaining).toLocaleString()} kcal over`}
+          {remaining >= 0
+            ? t('share.under', { n: remaining.toLocaleString() })
+            : t('share.over', { n: Math.abs(remaining).toLocaleString() })}
         </Text>
 
         <View style={styles.macros}>
-          <Macro label="Protein" value={data.protein} color={macroColors.protein} />
-          <Macro label="Carbs" value={data.carbs} color={macroColors.carbs} />
-          <Macro label="Fat" value={data.fat} color={macroColors.fat} />
+          <Macro label={t('meal.protein')} value={data.protein} color={macroColors.protein} />
+          <Macro label={t('meal.carbs')} value={data.carbs} color={macroColors.carbs} />
+          <Macro label={t('meal.fat')} value={data.fat} color={macroColors.fat} />
         </View>
 
         <View style={styles.statsRow}>
-          <MiniStat icon="water" label={`${data.water} glasses`} />
-          {data.exercise > 0 ? <MiniStat icon="barbell" label={`${data.exercise} kcal burned`} /> : null}
+          <MiniStat icon="water" label={`${data.water} ${t('trends.glasses')}`} />
+          {data.exercise > 0 ? (
+            <MiniStat icon="barbell" label={t('today.exerciseBurned', { n: data.exercise })} />
+          ) : null}
           {data.suppTotal > 0 ? (
-            <MiniStat icon="medkit" label={`${data.suppTaken}/${data.suppTotal} supps`} />
+            <MiniStat icon="medkit" label={`${data.suppTaken}/${data.suppTotal}`} />
           ) : null}
         </View>
       </View>
 
       <View style={styles.footer}>
-        <PrimaryButton label="Share image" onPress={share} loading={sharing} />
+        <PrimaryButton label={t('share.shareImage')} onPress={share} loading={sharing} />
       </View>
     </ScrollView>
   );

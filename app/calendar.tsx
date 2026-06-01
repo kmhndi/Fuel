@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getMonthCalories } from '@/db/meals';
 import { toDayKey } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
+import { useT } from '@/i18n';
 import { Card } from '@/components/ui';
 import { colors, font, radius, spacing } from '@/theme';
 
@@ -13,6 +14,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 export default function CalendarScreen() {
   const { goals } = useGoals();
+  const { t } = useT();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -101,13 +103,13 @@ export default function CalendarScreen() {
         </Card>
 
         <Text style={styles.summary}>
-          {loggedDays} {loggedDays === 1 ? 'day' : 'days'} logged this month
+          {loggedDays === 1 ? t('cal.dayLogged') : t('cal.daysLogged', { n: loggedDays })}
         </Text>
 
         <View style={styles.legend}>
-          <Legend color={colors.accentDim} label="Light" />
-          <Legend color={colors.accent} label="On track" />
-          <Legend color={colors.warning} label="Over goal" />
+          <Legend color={colors.accentDim} label={t('cal.light')} />
+          <Legend color={colors.accent} label={t('cal.onTrack')} />
+          <Legend color={colors.warning} label={t('cal.over')} />
         </View>
       </View>
     </View>

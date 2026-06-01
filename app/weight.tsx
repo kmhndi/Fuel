@@ -17,6 +17,7 @@ import { addWeight, deleteWeight, getWeights } from '@/db/weights';
 import { getLatestMeasurement, saveMeasurement } from '@/db/measurements';
 import { formatDayLabel, toDayKey } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
+import { useT } from '@/i18n';
 import { Card, EmptyState, Field, GhostButton, PrimaryButton } from '@/components/ui';
 import { displayToKg, kgToDisplay } from '@/health';
 import { movingAverage } from '@/stats';
@@ -26,6 +27,7 @@ import type { DayMeasurement, WeightEntry } from '@/types';
 
 export default function WeightScreen() {
   const { goals } = useGoals();
+  const { t: tr } = useT();
   const unit = goals.weightUnit;
   const [entries, setEntries] = useState<WeightEntry[]>([]);
   const [input, setInput] = useState('');
@@ -77,10 +79,10 @@ export default function WeightScreen() {
   };
 
   const confirmDelete = (entry: WeightEntry) => {
-    Alert.alert('Delete entry', `Remove the weight from ${formatDayLabel(entry.day)}?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(tr('weight.deleteTitle'), tr('weight.deleteMsg', { day: formatDayLabel(entry.day) }), [
+      { text: tr('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: tr('common.delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteWeight(entry.id);
@@ -100,7 +102,7 @@ export default function WeightScreen() {
   if (latest && goalKg != null) {
     const remaining = goalKg - latest.kg;
     if (Math.abs(remaining) < 0.2) {
-      projection = 'Goal reached 🎉';
+      projection = tr('weight.reached');
     } else if (entries.length >= 2) {
       const span = entries.slice(-8);
       const a = span[0];
@@ -111,10 +113,10 @@ export default function WeightScreen() {
       );
       const ratePerDay = (b.kg - a.kg) / days;
       if (ratePerDay === 0 || Math.sign(ratePerDay) !== Math.sign(remaining)) {
-        projection = 'Not trending toward goal yet';
+        projection = tr('weight.notTrending');
       } else {
         const weeks = Math.max(1, Math.round(remaining / ratePerDay / 7));
-        projection = `≈ ${weeks} week${weeks === 1 ? '' : 's'} to goal`;
+        projection = weeks === 1 ? tr('weight.weekToGoal') : tr('weight.weeksToGoal', { n: weeks });
       }
     }
   }
@@ -128,14 +130,14 @@ export default function WeightScreen() {
         {latest ? (
           <View style={styles.statsRow}>
             <Card style={styles.stat}>
-              <Text style={styles.statLabel}>Current</Text>
+              <Text style={styles.statLabel}>{tr('weight.current')}</Text>
               <Text style={styles.statValue}>
                 {kgToDisplay(latest.kg, unit).toFixed(1)}
                 <Text style={styles.statUnit}> {unit}</Text>
               </Text>
             </Card>
             <Card style={styles.stat}>
-              <Text style={styles.statLabel}>Since start</Text>
+              <Text style={styles.statLabel}>{tr('weight.sinceStart')}</Text>
               <Text
                 style={[
                   styles.statValue,
@@ -154,7 +156,7 @@ export default function WeightScreen() {
           <Card style={styles.goalCard}>
             <Ionicons name="flag" size={18} color={colors.accent} />
             <Text style={styles.goalText}>
-              Goal {kgToDisplay(goalKg, unit).toFixed(1)} {unit}
+              {tr('weight.goalLine', { v: kgToDisplay(goalKg, unit).toFixed(1), unit })}
               {projection ? ` · ${projection}` : ''}
             </Text>
           </Card>
@@ -162,13 +164,13 @@ export default function WeightScreen() {
 
         {entries.length >= 2 ? (
           <Card>
-            <Text style={styles.chartTitle}>Trend</Text>
+            <Text style={styles.chartTitle}>{tr('weight.trend')}</Text>
             <WeightChart entries={entries} unit={unit} />
           </Card>
         ) : null}
 
         <Card style={styles.logCard}>
-          <Text style={styles.logLabel}>Log today's weight</Text>
+          <Text style={styles.logLabel}>{tr('weight.logToday')}</Text>
           <View style={styles.logRow}>
             <View style={styles.inputWrap}>
               <TextInput
@@ -182,11 +184,11 @@ export default function WeightScreen() {
               <Text style={styles.inputUnit}>{unit}</Text>
             </View>
           </View>
-          <PrimaryButton label="Save weight" onPress={save} disabled={!canSave} loading={saving} />
+          <PrimaryButton label={tr('weight.saveWeight')} onPress={save} disabled={!canSave} loading={saving} />
         </Card>
 
         <Card style={styles.logCard}>
-          <Text style={styles.logLabel}>Body measurements</Text>
+          <Text style={styles.logLabel}>{tr('weight.measurements')}</Text>
           {measurement?.waistCm || measurement?.bodyFat ? (
             <Text style={styles.measureCurrent}>
               {measurement.waistCm ? `Waist ${measurement.waistCm} cm` : ''}
@@ -196,18 +198,18 @@ export default function WeightScreen() {
           ) : null}
           <View style={styles.measureRow}>
             <View style={styles.measureCell}>
-              <Field label="Waist" value={waist} onChangeText={(t) => setWaist(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix="cm" />
+              <Field label={tr('weight.waist')} value={waist} onChangeText={(v) => setWaist(v.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix="cm" />
             </View>
             <View style={styles.measureCell}>
-              <Field label="Body fat" value={bodyFat} onChangeText={(t) => setBodyFat(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix="%" />
+              <Field label={tr('weight.bodyFat')} value={bodyFat} onChangeText={(v) => setBodyFat(v.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" suffix="%" />
             </View>
           </View>
-          <GhostButton label={savingM ? 'Saving…' : 'Save measurements'} onPress={saveMeasurements} />
+          <GhostButton label={savingM ? tr('weight.savingDots') : tr('weight.saveMeasurements')} onPress={saveMeasurements} />
         </Card>
 
         {entries.length > 0 ? (
           <View style={styles.history}>
-            <Text style={styles.historyLabel}>History</Text>
+            <Text style={styles.historyLabel}>{tr('weight.history')}</Text>
             {[...entries].reverse().map((entry) => (
               <Pressable
                 key={entry.id}
@@ -220,13 +222,13 @@ export default function WeightScreen() {
                 </Text>
               </Pressable>
             ))}
-            <Text style={styles.hint}>Long-press an entry to delete it.</Text>
+            <Text style={styles.hint}>{tr('weight.longPressDelete')}</Text>
           </View>
         ) : (
           <EmptyState
             icon={<Ionicons name="scale-outline" size={40} color={colors.textMuted} />}
-            title="No weigh-ins yet"
-            subtitle="Log your weight to see your trend and change over time."
+            title={tr('weight.noWeighins')}
+            subtitle={tr('weight.noWeighinsSub')}
           />
         )}
       </ScrollView>
