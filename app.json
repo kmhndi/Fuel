@@ -11,9 +11,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.khalidalmohannadi.fuel",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"],
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -53,27 +55,42 @@
           {
             "name": "Blue",
             "ios": "./assets/icon-blue.png",
-            "android": { "foregroundImage": "./assets/adaptive-blue.png", "backgroundColor": "#0B0E14" }
+            "android": {
+              "foregroundImage": "./assets/adaptive-blue.png",
+              "backgroundColor": "#0B0E14"
+            }
           },
           {
             "name": "Orange",
             "ios": "./assets/icon-orange.png",
-            "android": { "foregroundImage": "./assets/adaptive-orange.png", "backgroundColor": "#0B0E14" }
+            "android": {
+              "foregroundImage": "./assets/adaptive-orange.png",
+              "backgroundColor": "#0B0E14"
+            }
           },
           {
             "name": "Pink",
             "ios": "./assets/icon-pink.png",
-            "android": { "foregroundImage": "./assets/adaptive-pink.png", "backgroundColor": "#0B0E14" }
+            "android": {
+              "foregroundImage": "./assets/adaptive-pink.png",
+              "backgroundColor": "#0B0E14"
+            }
           },
           {
             "name": "Violet",
             "ios": "./assets/icon-violet.png",
-            "android": { "foregroundImage": "./assets/adaptive-violet.png", "backgroundColor": "#0B0E14" }
+            "android": {
+              "foregroundImage": "./assets/adaptive-violet.png",
+              "backgroundColor": "#0B0E14"
+            }
           },
           {
             "name": "Yellow",
             "ios": "./assets/icon-yellow.png",
-            "android": { "foregroundImage": "./assets/adaptive-yellow.png", "backgroundColor": "#0B0E14" }
+            "android": {
+              "foregroundImage": "./assets/adaptive-yellow.png",
+              "backgroundColor": "#0B0E14"
+            }
           }
         ]
       ]
