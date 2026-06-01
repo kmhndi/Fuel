@@ -35,7 +35,13 @@ const dir = '/home/user/Fuel/assets';
 for (const [key, color] of Object.entries(accents)) {
   const iconName = key === 'default' ? 'icon.png' : `icon-${key}.png`;
   const fgName = key === 'default' ? 'adaptive-icon.png' : `adaptive-${key}.png`;
-  await sharp(Buffer.from(iosSvg(color))).png().toFile(`${dir}/${iconName}`);
+  // iOS icons must be opaque (App Store rejects an alpha channel).
+  await sharp(Buffer.from(iosSvg(color)))
+    .flatten({ background: BG })
+    .removeAlpha()
+    .png()
+    .toFile(`${dir}/${iconName}`);
+  // Android adaptive foregrounds keep transparency.
   await sharp(Buffer.from(fgSvg(color))).png().toFile(`${dir}/${fgName}`);
   console.log('wrote', iconName, fgName);
 }
