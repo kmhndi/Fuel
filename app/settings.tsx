@@ -143,7 +143,7 @@ export default function SettingsScreen() {
     successFeedback();
     setSaving(false);
     if (appearanceChanged) {
-      Alert.alert('Saved', 'Your new accent is set. Reopen Fuel to see it across the app and the home-screen icon.');
+      Alert.alert(t('set.savedTitle'), t('set.savedAccentMsg'));
     }
     router.back();
   };
@@ -153,10 +153,10 @@ export default function SettingsScreen() {
     try {
       const shared = await exportBackup();
       if (!shared) {
-        Alert.alert('Export ready', 'Sharing is not available on this device.');
+        Alert.alert(t('set.exportReady'), t('set.exportReadyMsg'));
       }
     } catch {
-      Alert.alert('Export failed', 'Could not create the backup file.');
+      Alert.alert(t('set.exportFailed'), t('set.exportFailedMsg'));
     } finally {
       setBusy(false);
     }
@@ -164,12 +164,12 @@ export default function SettingsScreen() {
 
   const onImport = () => {
     Alert.alert(
-      'Restore from backup',
-      'This replaces ALL current data with the contents of the backup file. Continue?',
+      t('set.restoreTitle'),
+      t('set.restoreMsg'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Choose file',
+          text: t('set.chooseFile'),
           onPress: async () => {
             setBusy(true);
             try {
@@ -177,10 +177,10 @@ export default function SettingsScreen() {
               if (result === 'restored') {
                 await refresh();
                 successFeedback();
-                Alert.alert('Restored', 'Your data has been restored from the backup.');
+                Alert.alert(t('set.restored'), t('set.restoredMsg'));
               }
             } catch (e) {
-              Alert.alert('Restore failed', e instanceof Error ? e.message : 'Bad file.');
+              Alert.alert(t('set.restoreFailed'), e instanceof Error ? e.message : t('set.badFile'));
             } finally {
               setBusy(false);
             }
@@ -195,11 +195,11 @@ export default function SettingsScreen() {
     setNotifGranted(granted);
     if (!granted) {
       Alert.alert(
-        'Notifications are off',
-        'Enable notifications for Fuel in your device settings to receive supplement reminders.',
+        t('set.notifOffTitle'),
+        t('set.notifOffMsg'),
         [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Open settings', onPress: () => Linking.openSettings() },
+          { text: t('set.notNow'), style: 'cancel' },
+          { text: t('set.openSettings'), onPress: () => Linking.openSettings() },
         ],
       );
     }
@@ -207,12 +207,12 @@ export default function SettingsScreen() {
 
   const confirmClear = () => {
     Alert.alert(
-      'Clear all data',
-      'This permanently deletes every meal, food, supplement, weigh-in and water log on this device. This cannot be undone.',
+      t('set.clearTitle'),
+      t('set.clearMsg'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete everything',
+          text: t('set.deleteEverything'),
           style: 'destructive',
           onPress: async () => {
             await clearAllData();
@@ -406,7 +406,7 @@ export default function SettingsScreen() {
           <GhostButton label={t('set.clearAll')} tone="danger" onPress={confirmClear} />
         </Card>
 
-        <Text style={styles.about}>Fuel v{version} · made for me, by me ⚡</Text>
+        <Text style={styles.about}>{t('set.about', { v: version })}</Text>
       </ScrollView>
 
       <View style={styles.footer}>

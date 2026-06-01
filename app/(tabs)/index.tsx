@@ -26,7 +26,6 @@ import { addCaffeine, clearCaffeine, getCaffeine } from '@/db/caffeine';
 import { getCheckIn } from '@/db/checkins';
 import { getCategories } from '@/db/categories';
 import {
-  formatDayLabel,
   isFuture,
   isToday,
   shiftDay,
@@ -68,7 +67,7 @@ export default function TodayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { goals, loaded } = useGoals();
-  const { t } = useT();
+  const { t, formatDay } = useT();
   const onboardedPrompted = useRef(false);
   const [day, setDay] = useState(() => toDayKey());
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -138,7 +137,7 @@ export default function TodayScreen() {
     const from = shiftDay(day, -1);
     Alert.alert(
       t('today.copyTitle'),
-      t('today.copyMsg', { from: formatDayLabel(from), to: formatDayLabel(day) }),
+      t('today.copyMsg', { from: formatDay(from), to: formatDay(day) }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -154,7 +153,7 @@ export default function TodayScreen() {
         },
       ],
     );
-  }, [day, load, t]);
+  }, [day, load, t, formatDay]);
 
   const onMealActions = useCallback(
     (meal: Meal) => {
@@ -383,7 +382,7 @@ function DateBar({
   onNext: () => void;
   onToday: () => void;
 }) {
-  const { t } = useT();
+  const { t, formatDay } = useT();
   const atToday = isToday(day);
   const nextDisabled = isFuture(shiftDay(day, 1));
   return (
@@ -392,7 +391,7 @@ function DateBar({
         <Ionicons name="chevron-back" size={22} color={colors.text} />
       </Pressable>
       <Pressable onPress={onToday} disabled={atToday} style={styles.dateLabelWrap}>
-        <Text style={styles.dateLabel}>{formatDayLabel(day)}</Text>
+        <Text style={styles.dateLabel}>{formatDay(day)}</Text>
         {!atToday ? <Text style={styles.jumpToday}>{t('today.jumpToday')}</Text> : null}
       </Pressable>
       <Pressable

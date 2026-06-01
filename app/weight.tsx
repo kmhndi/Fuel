@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Polyline } from 'react-native-svg';
 import { addWeight, deleteWeight, getWeights } from '@/db/weights';
 import { getLatestMeasurement, saveMeasurement } from '@/db/measurements';
-import { formatDayLabel, toDayKey } from '@/db/dates';
+import { toDayKey } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
 import { useT } from '@/i18n';
 import { Card, EmptyState, Field, GhostButton, PrimaryButton } from '@/components/ui';
@@ -27,7 +27,7 @@ import type { DayMeasurement, WeightEntry } from '@/types';
 
 export default function WeightScreen() {
   const { goals } = useGoals();
-  const { t: tr } = useT();
+  const { t: tr, formatDay } = useT();
   const unit = goals.weightUnit;
   const [entries, setEntries] = useState<WeightEntry[]>([]);
   const [input, setInput] = useState('');
@@ -79,7 +79,7 @@ export default function WeightScreen() {
   };
 
   const confirmDelete = (entry: WeightEntry) => {
-    Alert.alert(tr('weight.deleteTitle'), tr('weight.deleteMsg', { day: formatDayLabel(entry.day) }), [
+    Alert.alert(tr('weight.deleteTitle'), tr('weight.deleteMsg', { day: formatDay(entry.day) }), [
       { text: tr('common.cancel'), style: 'cancel' },
       {
         text: tr('common.delete'),
@@ -216,7 +216,7 @@ export default function WeightScreen() {
                 onLongPress={() => confirmDelete(entry)}
                 style={({ pressed }) => [styles.entry, pressed && styles.pressed]}
               >
-                <Text style={styles.entryDay}>{formatDayLabel(entry.day)}</Text>
+                <Text style={styles.entryDay}>{formatDay(entry.day)}</Text>
                 <Text style={styles.entryValue}>
                   {kgToDisplay(entry.kg, unit).toFixed(1)} {unit}
                 </Text>

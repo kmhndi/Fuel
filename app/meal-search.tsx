@@ -3,7 +3,6 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getUsedTags, searchMeals } from '@/db/meals';
-import { formatDayLabel } from '@/db/dates';
 import { Field, EmptyState } from '@/components/ui';
 import { mealTypeMeta } from '@/nutrition';
 import { useT } from '@/i18n';
@@ -13,7 +12,7 @@ import type { Meal } from '@/types';
 
 export default function MealSearchScreen() {
   const router = useRouter();
-  const { t } = useT();
+  const { t, formatDay } = useT();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Meal[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -77,7 +76,7 @@ export default function MealSearchScreen() {
             <View style={styles.info}>
               <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
               <Text style={styles.meta}>
-                {formatDayLabel(item.day)} · {item.calories} {t('common.kcal')}
+                {formatDay(item.day)} · {item.calories} {t('common.kcal')}
                 {item.tag ? ` · ${item.tag}` : ''}
               </Text>
             </View>

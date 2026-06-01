@@ -9,6 +9,7 @@ import {
 import { I18nManager } from 'react-native';
 import { openDatabaseSync } from 'expo-sqlite';
 import { setLanguageSetting } from '../db/settings';
+import { shiftDay, toDayKey } from '../db/dates';
 import { translations, type TKey } from './translations';
 import type { Language } from '../types';
 
@@ -52,10 +53,26 @@ function translate(lang: Language, key: TKey, params?: TParams): string {
   return str;
 }
 
+/** Localized "Today"/"Yesterday"/short-date label for a YYYY-MM-DD day key. */
+function makeFormatDay(lang: Language) {
+  return (dayKey: string): string => {
+    const today = toDayKey();
+    if (dayKey === today) return translate(lang, 'date.today');
+    if (dayKey === shiftDay(today, -1)) return translate(lang, 'date.yesterday');
+    const [y, m, d] = dayKey.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(
+      lang === 'ar' ? 'ar' : undefined,
+      { weekday: 'short', month: 'short', day: 'numeric' },
+    );
+  };
+}
+
 interface LanguageContextValue {
   lang: Language;
   /** Translate a key, with optional {placeholder} params. */
   t: (key: TKey, params?: TParams) => string;
+  /** Localized relative day label (Today/Yesterday/date). */
+  formatDay: (dayKey: string) => string;
   /** Persist + apply a new language. Returns whether a restart is recommended. */
   setLanguage: (lang: Language) => Promise<boolean>;
 }
@@ -63,6 +80,7 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue>({
   lang: initialLanguage,
   t: (key) => translations.en[key] ?? key,
+  formatDay: makeFormatDay(initialLanguage),
   setLanguage: async () => false,
 });
 
@@ -78,7 +96,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<LanguageContextValue>(
-    () => ({ lang, t: (key, params) => translate(lang, key, params), setLanguage }),
+    () => ({
+      lang,
+      t: (key, params) => translate(lang, key, params),
+      formatDay: makeFormatDay(lang),
+      setLanguage,
+    }),
     [lang, setLanguage],
   );
 
