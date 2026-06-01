@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.khalidalmohannadi.fuel",
+      "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"],
         "ITSAppUsesNonExemptEncryption": false
@@ -18,6 +19,7 @@
     },
     "android": {
       "package": "com.khalidalmohannadi.fuel",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B0E14"
