@@ -13,6 +13,7 @@ export const translations = {
     'common.kcal': 'kcal',
 
     'tabs.today': 'Today',
+    'tabs.home': 'Home',
     'tabs.supplements': 'Supplements',
     'tabs.trends': 'Trends',
     'tabs.more': 'More',
@@ -389,6 +390,7 @@ export const translations = {
     'common.kcal': 'سعرة',
 
     'tabs.today': 'اليوم',
+    'tabs.home': 'الرئيسية',
     'tabs.supplements': 'المكمّلات',
     'tabs.trends': 'الإحصائيات',
     'tabs.more': 'المزيد',

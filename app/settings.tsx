@@ -20,10 +20,6 @@ import {
   getPermissionGranted,
   requestNotificationPermission,
 } from '@/notifications';
-import {
-  setAlternateAppIcon,
-  supportsAlternateIcons,
-} from 'expo-alternate-app-icons';
 import { exportBackup, importBackup } from '@/backup';
 import { useGoals } from '@/state/GoalsContext';
 import { useT } from '@/i18n';
@@ -39,6 +35,22 @@ import { displayToKg, kgToDisplay } from '@/health';
 import { selectionFeedback, successFeedback } from '@/haptics';
 import { ACCENT_CHOICES, ACCENT_ICON_NAME, colors, font, radius, spacing } from '@/theme';
 import type { Language, ThemeMode, WeightUnit } from '@/types';
+
+/**
+ * Lazily load the alternate-app-icons native module. It's guarded so a missing
+ * native binding (e.g. an out-of-date dev build) throws here and is swallowed,
+ * instead of throwing at module import and taking the whole Settings route down
+ * with it (expo-router drops a route whose module fails to load). The accent
+ * icon switch simply no-ops when the module isn't available.
+ */
+type AltIcons = typeof import('expo-alternate-app-icons');
+function altIcons(): AltIcons | null {
+  try {
+    return require('expo-alternate-app-icons') as AltIcons;
+  } catch {
+    return null;
+  }
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -132,9 +144,10 @@ export default function SettingsScreen() {
       accent,
     });
     // Switch the home-screen app icon to match the chosen accent.
-    if (appearanceChanged && Platform.OS !== 'web' && supportsAlternateIcons) {
+    const alt = altIcons();
+    if (appearanceChanged && Platform.OS !== 'web' && alt?.supportsAlternateIcons) {
       try {
-        await setAlternateAppIcon(ACCENT_ICON_NAME[accent] ?? null);
+        await alt.setAlternateAppIcon(ACCENT_ICON_NAME[accent] ?? null);
       } catch {
         // Device may not support alternate icons — ignore.
       }

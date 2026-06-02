@@ -12,21 +12,38 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.header },
+        // Glassy frosted header (blur over the gradient), not a solid band.
+        headerStyle: { backgroundColor: 'transparent' },
+        headerTransparent: false,
+        headerBackground: () => (
+          <View style={StyleSheet.absoluteFill}>
+            <BlurView
+              tint={themeMode === 'light' ? 'light' : 'dark'}
+              intensity={50}
+              style={StyleSheet.absoluteFill}
+            />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: themeMode === 'light' ? 'rgba(255,255,255,0.25)' : 'rgba(11,10,31,0.25)' },
+              ]}
+            />
+          </View>
+        ),
         headerTintColor: colors.text,
         headerShadowVisible: false,
         headerTitleStyle: { fontWeight: '700' },
-        headerTransparent: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        // Floating rounded "bubble" nav, detached from the screen edges.
+        tabBarShowLabel: false,
+        // Floating rounded "bubble" nav: icons only, narrow, detached from edges.
         tabBarStyle: {
           position: 'absolute',
-          left: spacing.lg,
-          right: spacing.lg,
+          left: 56,
+          right: 56,
           bottom: (insets.bottom || spacing.md) + spacing.xs,
-          height: 64,
-          borderRadius: radius.xl,
+          height: 58,
+          borderRadius: radius.pill,
           borderTopWidth: 0,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: colors.border,
@@ -34,7 +51,7 @@ export default function TabsLayout() {
           overflow: 'hidden',
           elevation: 0,
         },
-        tabBarItemStyle: { paddingVertical: spacing.sm },
+        tabBarItemStyle: { height: 58 },
         tabBarBackground: () => (
           <View style={StyleSheet.absoluteFill}>
             <BlurView
@@ -56,8 +73,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: t('tabs.today'),
-          tabBarLabel: t('tabs.today'),
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flame" color={color} size={size} />
           ),
