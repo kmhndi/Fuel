@@ -151,7 +151,7 @@ export default function SupplementsScreen() {
         }}
         style={({ pressed }) => [
           styles.fab,
-          { bottom: insets.bottom + spacing.lg },
+          { bottom: insets.bottom + 76 },
           pressed && styles.fabPressed,
         ]}
         accessibilityLabel="Add a supplement"
@@ -273,7 +273,7 @@ function SupplementRow({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: 'transparent',
   },
   listContent: {
     padding: spacing.lg,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.accent,
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },

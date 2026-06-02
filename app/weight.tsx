@@ -298,7 +298,7 @@ function WeightChart({ entries, unit }: { entries: WeightEntry[]; unit: string }
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg, gap: spacing.md },
   statsRow: { flexDirection: 'row', gap: spacing.md },
   stat: { flex: 1, gap: spacing.xs },

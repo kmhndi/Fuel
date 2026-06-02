@@ -177,7 +177,7 @@ function LanguageButton({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   flex: { flex: 1 },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm, paddingTop: spacing.lg },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.surfaceAlt },

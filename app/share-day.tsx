@@ -145,10 +145,11 @@ function MiniStat({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg },
   card: {
-    backgroundColor: colors.surface,
+    // Solid (not the translucent glass) so the captured PNG is opaque & on-brand.
+    backgroundColor: '#16142E',
     borderRadius: radius.lg,
     padding: spacing.xl,
     gap: spacing.sm,

@@ -62,8 +62,8 @@ export default function MoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, gap: spacing.sm },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  content: { padding: spacing.lg, paddingBottom: 110, gap: spacing.sm },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

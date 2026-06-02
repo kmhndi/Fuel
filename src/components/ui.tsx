@@ -10,8 +10,9 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { selectionFeedback } from '../haptics';
-import { colors, font, radius, spacing } from '../theme';
+import { colors, font, radius, spacing, themeMode } from '../theme';
 
 /** A rounded surface used to group related content. */
 export function Card({
@@ -22,6 +23,31 @@ export function Card({
   style?: StyleProp<ViewStyle>;
 }) {
   return <View style={[styles.card, style]}>{children}</View>;
+}
+
+/**
+ * A frosted-glass card with real blur and a soft accent glow. Reserved for hero
+ * surfaces (1–2 per screen) since stacked blur views are expensive — plain
+ * `Card` (translucent, no blur) is the default elsewhere.
+ */
+export function GlassCard({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={styles.glassWrap}>
+      <BlurView
+        tint={themeMode === 'light' ? 'light' : 'dark'}
+        intensity={30}
+        style={styles.glass}
+      >
+        <View style={[styles.glassInner, style]}>{children}</View>
+      </BlurView>
+    </View>
+  );
 }
 
 /** Primary call-to-action button with an optional loading state. */
@@ -170,6 +196,22 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.lg,
   },
+  glassWrap: {
+    borderRadius: radius.xl,
+    shadowColor: colors.glow,
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  glass: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  glassInner: {
+    padding: spacing.lg,
+  },
   primaryButton: {
     backgroundColor: colors.accent,
     borderRadius: radius.md,
@@ -178,6 +220,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 52,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
   primaryButtonLabel: {
     color: colors.bg,

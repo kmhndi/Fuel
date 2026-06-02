@@ -102,7 +102,7 @@ export default function AddExerciseScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg, gap: spacing.lg },
   lead: { color: colors.textMuted, fontSize: font.size.sm, lineHeight: 20 },
   quickLabel: {

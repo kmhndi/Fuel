@@ -182,7 +182,7 @@ function TargetRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg, gap: spacing.md },
   lead: { color: colors.textMuted, fontSize: font.size.sm, lineHeight: 20 },
   card: { gap: spacing.md },

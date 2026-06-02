@@ -67,7 +67,7 @@ export default function AchievementsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg, gap: spacing.md },
   count: { color: colors.text, fontSize: font.size.lg, fontWeight: font.weight.bold, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },

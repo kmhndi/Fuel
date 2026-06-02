@@ -131,7 +131,7 @@ export default function FoodLibraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   searchWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   list: { padding: spacing.lg, gap: spacing.sm },
   row: {
