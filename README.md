@@ -1,77 +1,116 @@
 # Fuel ⚡
 
-A simple, private app to track my daily calories and remind me to take my
-supplements. Built for myself, not for the public.
+A private, on-device app to track my calories, macros, supplements and more —
+built for myself, not for the public. No account, no cloud, no tracking.
+Bilingual (English / العربية) with a deep-indigo "glass" interface.
 
-## What it does
+---
 
-### Calorie & macro tracking
-- A daily **calorie budget** shown as an animated progress ring — see at a
-  glance how much you have left (or how far over you are).
-- **Macros** (protein / carbs / fat) tracked against goals, with a calorie
-  estimate auto-filled from the macros you enter.
-- Meals are grouped by **Breakfast / Lunch / Dinner / Snacks**, each with its
-  own subtotal.
-- A **food library**: anything you log becomes a one-tap quick-add next time,
-  sorted by favorites and recency. Star the ones you eat often.
-- **Edit** any entry, **delete** with a long-press, and **navigate to any past
-  day** to review or back-fill.
+## Features
+
+### Calories & macros
+- **Animated calorie ring** showing how much you have left (or how far over),
+  on a frosted-glass hero card.
+- **Macros** — protein, carbs, fat, plus **fiber, sugar and net carbs**. Enter
+  macros and calories auto-estimate (4/4/9).
+- **Meal categories** — Breakfast / Lunch / Dinner / Snacks by default, each
+  with a subtotal, and you can **add your own** categories with icons.
+- **Food library** — anything you log is saved for **one-tap re-adding**, sorted
+  by favorites & recency. Manage/search/star/delete saved foods.
+- **Custom quick-add presets** for your go-to foods.
+- **Fast logging** — quick-calories (no name), copy yesterday's meals, duplicate
+  a meal, optional per-meal **notes** and **tags**, edit/delete, and **navigate
+  to any past day**.
+- **Global search** across everything you've ever logged (name / note / tag).
+
+### Energy balance
+- Honest **eaten vs burned → daily deficit / surplus**, not just a goal.
+- Log **exercise** (calories add to what you burned).
+- Optional **resting burn (RMR)** — entered or estimated from your profile.
+- Built-in **TDEE goal calculator** (Mifflin-St Jeor) for lose/maintain/gain.
+- **Per-weekday calorie goals** (training vs rest days).
+
+### Hydration, caffeine, body
+- **Water** tracking with a daily glass goal + optional reminder notifications.
+- **Caffeine** tracking against a daily limit.
+- **Weight** with a trend chart, **goal weight + ETA projection**, **body
+  measurements** (waist, body-fat %), and **kg/lb** units.
 
 ### Supplements
-- A daily **checklist** — tap to check off each supplement and build a
-  **streak** 🔥.
-- Per-supplement **daily reminders** via local notifications, each with its own
-  on/off bell.
-- A progress bar showing how many you've taken today.
+- Daily **checklist** with tap-to-take and 🔥 **streaks**.
+- **Reminders** via local notifications — custom times, specific weekdays, or
+  twice-daily; per-supplement on/off.
+- **Inventory** (doses left + refill warning), **mark all taken**, edit, and
+  adherence tracking.
 
-### History & trends
-- 14-day **calorie chart** with a goal reference line (bars turn amber when you
-  go over).
-- Daily-average calories, days on target, average protein, and **supplement
-  adherence %**.
+### Insights & motivation
+- **Trends** tab: 7 / 14 / 30-day calorie chart with goal line + 7-day moving
+  average, daily averages, on-target days, protein/water, and supplement
+  adherence.
+- **Calendar heatmap** of logged & on-target days.
+- **Achievements** / badges, logging streaks, a "what to eat" remaining helper,
+  daily **mood & energy** check-in, and a goal-met **confetti** celebration.
 
-### Private by design
-- Everything lives on the device in **SQLite** — no account, no cloud, no
-  tracking. A one-tap "clear all data" lives in Settings.
+### Personal & private
+- **Light / dark theme** + a choice of **accent color** (the home-screen app
+  icon switches to match).
+- **Backup / restore** your data as a file; share a daily **summary card**.
+- **Bilingual** UI (English / Arabic) with full RTL.
+- Everything is stored locally in **SQLite** — no account, no servers, no
+  analytics. One-tap **clear all data** in Settings.
+
+---
 
 ## Tech
-- [Expo](https://expo.dev/) SDK 54 + React Native (TypeScript), file-based
+- [Expo](https://expo.dev/) **SDK 54** + React Native (TypeScript), file-based
   routing via [Expo Router](https://docs.expo.dev/router/introduction/)
-- Local storage via [`expo-sqlite`](https://docs.expo.dev/versions/latest/sdk/sqlite/)
+- Local storage: [`expo-sqlite`](https://docs.expo.dev/versions/latest/sdk/sqlite/)
   with versioned migrations
-- Local notifications via [`expo-notifications`](https://docs.expo.dev/versions/latest/sdk/notifications/)
-- [`react-native-svg`](https://github.com/software-mansion/react-native-svg)
-  for the calorie ring, plus haptic feedback
+- Local notifications: [`expo-notifications`](https://docs.expo.dev/versions/latest/sdk/notifications/)
+- UI: `react-native-svg` (ring/charts), `expo-blur` + `expo-linear-gradient`
+  (glass + gradient), haptics, `expo-alternate-app-icons`
+- Backup/share: `expo-file-system`, `expo-sharing`, `expo-document-picker`,
+  `react-native-view-shot`
+- Custom lightweight i18n (English / Arabic)
 
 ## Project structure
 ```
-app/                  # Screens (Expo Router)
-  _layout.tsx         # Root: DB init, notifications, goals provider, modals
-  (tabs)/             # Tab bar: Today, Supplements, History
-  add-meal.tsx        # Modal: add/edit a meal, macros, food-library search
-  add-supplement.tsx  # Modal: add a supplement + pick reminder time
-  settings.tsx        # Modal: goals, notifications, clear data
+app/                      # Screens (Expo Router)
+  _layout.tsx             # Root: DB init, providers, gradient backdrop, modal routes
+  (tabs)/                 # Tab bar (glass bubble): Today, Supplements, Trends, More
+  add-meal / add-supplement / add-exercise / checkin / share-day   # modals
+  settings / goal-calculator / weekday-goals / weight / food-library
+  meal-search / calendar / achievements / presets / categories / onboarding
 src/
-  db/                 # SQLite connection, migrations, queries (meals, foods,
-                      #   supplements, settings) and date helpers
-  notifications/      # Permissions, Android channel, scheduling reminders
-  state/              # Goals context shared across tabs
-  components/         # ProgressRing, MacroBars, shared UI kit
-  nutrition.ts        # Macro math, colors, meal-type metadata
-  theme.ts            # Colors, spacing, typography
-  types.ts            # Domain types
+  db/                     # SQLite + migrations + queries: meals, foods,
+                          #   supplements, water, weights, exercise, caffeine,
+                          #   checkins, measurements, presets, categories,
+                          #   settings, backup, achievements, dates
+  notifications/          # Permissions, channel, reminder scheduling
+  i18n/                   # Translations (en/ar) + useT() + RTL
+  state/                  # Goals context
+  components/             # ScreenBackground, ProgressRing, MacroBars,
+                          #   WaterCard, CaffeineCard, Celebration, UI kit
+  theme.ts  health.ts  nutrition.ts  stats.ts  haptics.ts  backup.ts  types.ts
+scripts/gen-icons.mjs     # Generate the bolt app icon in each accent (sharp)
+scripts/bump-build.mjs    # Bump iOS/Android build numbers
 ```
 
 ## Getting started
-Requires **Node ≥ 20.19.4** (Expo SDK 54 / React Native 0.81 won't run on
-Node 18 — Metro uses Node 20+ APIs).
+Requires **Node ≥ 20.19.4** (Expo SDK 54 / RN 0.81 use Node 20+ APIs).
 ```bash
 npm install
 npx expo start
 ```
-Then open in [Expo Go](https://expo.dev/go) or a dev build. Notifications need
-a physical device — they don't fire on simulators/emulators.
+The blur/gradient and notifications need a **dev build** (not Expo Go) on a real
+device or simulator:
+```bash
+npx expo prebuild --clean
+npx expo run:ios            # or: npm run ios
+```
 
 ## Scripts
-- `npm start` — start the Expo dev server
-- `npm run typecheck` — TypeScript check (`tsc --noEmit`)
+- `npm start` — Expo dev server
+- `npm run ios` / `npm run android` — build & run a dev build
+- `npm run typecheck` — `tsc --noEmit`
+- `npm run bump` — increment iOS/Android build numbers before a store upload
