@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getGoals, saveGoals } from '@/db/settings';
+import { updateWidgetSnapshot } from '@/widgets';
 import { getLatestWeight } from '@/db/weights';
 import { useGoals } from '@/state/GoalsContext';
 import { Card, Field, SegmentedControl } from '@/components/ui';
@@ -76,6 +77,7 @@ export default function GoalCalculatorScreen() {
       activity,
     });
     await refresh();
+    await updateWidgetSnapshot();
     successFeedback();
     router.back();
   };

@@ -15,6 +15,7 @@ import {
   toggleFavorite,
 } from '@/db/foods';
 import { addMeal } from '@/db/meals';
+import { updateWidgetSnapshot } from '@/widgets';
 import { Field, EmptyState } from '@/components/ui';
 import { mealTypeForNow } from '@/nutrition';
 import { useT } from '@/i18n';
@@ -46,6 +47,7 @@ export default function FoodLibraryScreen() {
       fat: food.fat,
       mealType: mealTypeForNow(),
     });
+    void updateWidgetSnapshot();
     successFeedback();
     Alert.alert(t('food.logged'), t('food.loggedMsg', { name: food.name }));
   };

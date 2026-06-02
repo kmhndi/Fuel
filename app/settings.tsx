@@ -15,6 +15,7 @@ import Constants from 'expo-constants';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getGoals, saveGoals, clearAllData } from '@/db/settings';
+import { updateWidgetSnapshot } from '@/widgets';
 import {
   applyWaterReminders,
   getPermissionGranted,
@@ -153,6 +154,7 @@ export default function SettingsScreen() {
       }
     }
     await refresh();
+    await updateWidgetSnapshot();
     successFeedback();
     setSaving(false);
     if (appearanceChanged) {

@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { addMeal, getMeal, updateMeal } from '@/db/meals';
+import { updateWidgetSnapshot } from '@/widgets';
 import {
   getFoodSuggestions,
   toggleFavorite as toggleFoodFavorite,
@@ -156,6 +157,7 @@ export default function AddMealScreen() {
       } else {
         await addMeal(payload, params.day);
       }
+      void updateWidgetSnapshot();
       successFeedback();
       router.back();
     } catch {

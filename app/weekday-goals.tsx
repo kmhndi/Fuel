@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getGoals, saveGoals } from '@/db/settings';
+import { updateWidgetSnapshot } from '@/widgets';
 import { useGoals } from '@/state/GoalsContext';
 import { Card, Field, PrimaryButton } from '@/components/ui';
 import { useT } from '@/i18n';
@@ -45,6 +46,7 @@ export default function WeekdayGoalsScreen() {
     const weekdayGoals = arr.some((v) => v != null) ? arr : null;
     await saveGoals({ weekdayGoals });
     await refresh();
+    await updateWidgetSnapshot();
     successFeedback();
     setSaving(false);
     router.back();

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { saveGoals } from '@/db/settings';
+import { updateWidgetSnapshot } from '@/widgets';
 import { useGoals } from '@/state/GoalsContext';
 import { useT } from '@/i18n';
 import { Field, GhostButton, PrimaryButton } from '@/components/ui';
@@ -48,6 +49,7 @@ export default function OnboardingScreen() {
       waterGoal: Math.max(1, int(waterGoal)),
     });
     await refresh();
+    await updateWidgetSnapshot();
     successFeedback();
     router.replace('/');
   };

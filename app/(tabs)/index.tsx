@@ -35,6 +35,7 @@ import {
 import { useGoals } from '@/state/GoalsContext';
 import { useT } from '@/i18n';
 import { effectiveCalorieGoal, effectiveRestingBurn } from '@/health';
+import { updateWidgetSnapshot } from '@/widgets';
 import { ProgressRing } from '@/components/ProgressRing';
 import { MacroBars } from '@/components/MacroBars';
 import { WaterCard } from '@/components/WaterCard';
@@ -103,6 +104,9 @@ export default function TodayScreen() {
     setCheckin(ci);
     setCategories(cats);
     setWeightKg(w?.kg ?? null);
+    // Refresh the home/lock-screen widgets with today's totals (always today,
+    // even when viewing another day). Fire-and-forget; safe no-op on web.
+    void updateWidgetSnapshot();
   }, [day]);
 
   useFocusEffect(
@@ -127,10 +131,12 @@ export default function TodayScreen() {
       successFeedback();
       setCelebrate(true);
     }
+    void updateWidgetSnapshot();
   }, [day, goals.waterGoal]);
 
   const onRemoveWater = useCallback(async () => {
     setWater(await adjustWater(day, -1));
+    void updateWidgetSnapshot();
   }, [day]);
 
   const onCopyYesterday = useCallback(() => {

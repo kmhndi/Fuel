@@ -12,6 +12,7 @@ import { GoalsProvider } from '@/state/GoalsContext';
 import { LanguageProvider, useT } from '@/i18n';
 import { ScreenBackground } from '@/components/ScreenBackground';
 import { colors, themeMode } from '@/theme';
+import { drainPendingWater, updateWidgetSnapshot, useWidgetSync } from '@/widgets';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -80,6 +81,9 @@ function RootNavigator() {
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
+  // Reconcile widget-originated water taps whenever the app returns to foreground.
+  useWidgetSync();
+
   useEffect(() => {
     (async () => {
       try {
@@ -88,6 +92,10 @@ export default function RootLayout() {
         // Ask for notification permission up front so reminders work as soon
         // as the user adds a supplement. Failure here is non-fatal.
         await requestNotificationPermission();
+        // Apply any glasses tapped from a widget while closed, then push a
+        // fresh snapshot so the widgets reflect today's totals on launch.
+        await drainPendingWater();
+        await updateWidgetSnapshot();
       } finally {
         setReady(true);
         await SplashScreen.hideAsync().catch(() => {});

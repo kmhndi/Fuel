@@ -17,6 +17,11 @@
           "remote-notification"
         ],
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.khalidalmohannadi.fuel"
+        ]
       }
     },
     "android": {
@@ -93,6 +98,54 @@
             }
           }
         ]
+      ],
+      "@bacons/apple-targets",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Calories",
+              "label": "Fuel · Calories",
+              "description": "Calories remaining today.",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "none"
+            },
+            {
+              "name": "Protein",
+              "label": "Fuel · Protein",
+              "description": "Protein remaining today.",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "none"
+            },
+            {
+              "name": "Water",
+              "label": "Fuel · Water",
+              "description": "Track glasses — tap + to log one.",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "none"
+            },
+            {
+              "name": "Summary",
+              "label": "Fuel · Today",
+              "description": "Calories, protein, and water at a glance.",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal"
+            }
+          ]
+        }
       ]
     ],
     "experiments": {
