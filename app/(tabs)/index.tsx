@@ -40,7 +40,7 @@ import { MacroBars } from '@/components/MacroBars';
 import { WaterCard } from '@/components/WaterCard';
 import { CaffeineCard } from '@/components/CaffeineCard';
 import { Celebration } from '@/components/Celebration';
-import { Card, EmptyState } from '@/components/ui';
+import { Card, EmptyState, GlassCard } from '@/components/ui';
 import { successFeedback, tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
 import type { CheckIn, Meal, MealCategory } from '@/types';
@@ -358,7 +358,7 @@ export default function TodayScreen() {
         }}
         style={({ pressed }) => [
           styles.fab,
-          { bottom: insets.bottom + spacing.lg },
+          { bottom: insets.bottom + 76 },
           pressed && styles.fabPressed,
         ]}
         accessibilityLabel="Log a meal"
@@ -423,7 +423,7 @@ function DayOverview({
   const over = remaining < 0;
 
   return (
-    <Card style={styles.overviewCard}>
+    <GlassCard style={styles.overviewCard}>
       <ProgressRing progress={progress} size={196} strokeWidth={16}>
         <Text style={styles.ringValue}>{Math.abs(remaining).toLocaleString()}</Text>
         <Text style={styles.ringLabel}>{over ? t('today.kcalOver') : t('today.kcalLeft')}</Text>
@@ -445,7 +445,7 @@ function DayOverview({
           fatGoal={goals.fatGoal}
         />
       </View>
-    </Card>
+    </GlassCard>
   );
 }
 
@@ -616,7 +616,7 @@ function MealRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   dateBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -641,8 +641,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   bannerText: { flex: 1, color: colors.text, fontSize: font.size.sm, fontWeight: font.weight.medium },
-  overviewCard: { alignItems: 'center', gap: spacing.lg, marginBottom: spacing.md },
-  ringValue: { color: colors.text, fontSize: font.size.xxl, fontWeight: font.weight.bold },
+  overviewCard: { alignItems: 'center', gap: spacing.lg },
+  ringValue: { color: colors.text, fontSize: font.size.xxl, fontWeight: font.weight.heavy, letterSpacing: -0.5 },
   ringLabel: { color: colors.textMuted, fontSize: font.size.sm, marginTop: -spacing.xs },
   ringSub: { color: colors.textMuted, fontSize: font.size.xs, marginTop: spacing.sm },
   budgetLine: {
@@ -784,9 +784,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.55,
+    shadowRadius: 14,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },

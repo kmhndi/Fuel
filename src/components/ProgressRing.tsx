@@ -16,7 +16,7 @@ export function ProgressRing({
   strokeWidth = 16,
   color = colors.accent,
   overColor = colors.warning,
-  trackColor = colors.surfaceAlt,
+  trackColor = 'rgba(255,255,255,0.10)',
   children,
 }: {
   progress: number;

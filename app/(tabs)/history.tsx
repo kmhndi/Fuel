@@ -202,8 +202,8 @@ function Stat({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, gap: spacing.md },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  content: { padding: spacing.lg, paddingBottom: 110, gap: spacing.md },
   statsRow: { flexDirection: 'row', gap: spacing.md },
   stat: { flex: 1, gap: spacing.xs },
   statLabel: {

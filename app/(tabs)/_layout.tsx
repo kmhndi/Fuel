@@ -1,25 +1,43 @@
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Link, Tabs } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useT } from '@/i18n';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, themeMode } from '@/theme';
 
 export default function TabsLayout() {
   const { t } = useT();
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
+        headerStyle: { backgroundColor: colors.header },
         headerTintColor: colors.text,
         headerShadowVisible: false,
         headerTitleStyle: { fontWeight: '700' },
+        headerTransparent: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          position: 'absolute',
+          backgroundColor: 'transparent',
           borderTopColor: colors.border,
         },
-        sceneStyle: { backgroundColor: colors.bg },
+        tabBarBackground: () => (
+          <View style={StyleSheet.absoluteFill}>
+            <BlurView
+              tint={themeMode === 'light' ? 'light' : 'dark'}
+              intensity={40}
+              style={StyleSheet.absoluteFill}
+            />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: themeMode === 'light' ? 'rgba(255,255,255,0.4)' : 'rgba(11,10,31,0.35)' },
+              ]}
+            />
+          </View>
+        ),
+        sceneStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Tabs.Screen

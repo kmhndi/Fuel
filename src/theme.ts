@@ -58,22 +58,28 @@ const prefs = loadPrefs();
 
 export const themeMode = prefs.theme;
 
+// Deep-indigo "glass" dark theme: translucent surfaces sit over a gradient
+// backdrop (see ScreenBackground), so cards read as frosted glass.
 const dark = {
-  bg: '#0B0E14',
-  surface: '#151A23',
-  surfaceAlt: '#1D232E',
-  border: '#262E3A',
-  text: '#E8ECF1',
-  textMuted: '#8A94A6',
+  bg: '#0B0A1F',
+  surface: 'rgba(255,255,255,0.06)',
+  surfaceAlt: 'rgba(255,255,255,0.10)',
+  border: 'rgba(255,255,255,0.12)',
+  text: '#EDEBFF',
+  textMuted: '#A6A2C9',
+  gradient: ['#1E1B4B', '#312E81', '#0B0A1F'] as const,
+  header: '#16142E',
 };
 
 const light = {
-  bg: '#F4F6FA',
+  bg: '#EEF0FB',
   surface: '#FFFFFF',
   surfaceAlt: '#E9EDF3',
-  border: '#D7DEE8',
+  border: '#DADCEC',
   text: '#11161F',
   textMuted: '#667085',
+  gradient: ['#F4F2FF', '#E8E9FB', '#EEF0FB'] as const,
+  header: '#FFFFFF',
 };
 
 const base = prefs.theme === 'light' ? light : dark;
@@ -83,6 +89,9 @@ export const colors = {
   accent: prefs.accent,
   // Faint accent tint via 8-digit hex alpha (~17%).
   accentDim: `${prefs.accent}2B`,
+  // Accent glow for shadows (~33% alpha).
+  glow: prefs.accent,
+  glowDim: `${prefs.accent}55`,
   danger: '#F87171',
   warning: '#FBBF24',
 };
@@ -98,8 +107,9 @@ export const spacing = {
 
 export const radius = {
   sm: 8,
-  md: 12,
-  lg: 16,
+  md: 14,
+  lg: 20,
+  xl: 28,
   pill: 999,
 } as const;
 
@@ -117,5 +127,6 @@ export const font = {
     medium: '500',
     semibold: '600',
     bold: '700',
+    heavy: '800',
   },
 } as const;

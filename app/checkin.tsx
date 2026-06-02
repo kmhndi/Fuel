@@ -96,7 +96,7 @@ export default function CheckInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg, gap: spacing.md },
   label: { color: colors.text, fontSize: font.size.md, fontWeight: font.weight.semibold, marginTop: spacing.sm },
   moods: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },

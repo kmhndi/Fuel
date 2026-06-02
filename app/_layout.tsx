@@ -10,6 +10,7 @@ import {
 } from '@/notifications';
 import { GoalsProvider } from '@/state/GoalsContext';
 import { LanguageProvider, useT } from '@/i18n';
+import { ScreenBackground } from '@/components/ScreenBackground';
 import { colors, themeMode } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -19,10 +20,10 @@ function RootNavigator() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
+        headerStyle: { backgroundColor: colors.header },
         headerTintColor: colors.text,
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.bg },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -93,11 +94,14 @@ export default function RootLayout() {
   }
 
   return (
-    <LanguageProvider>
-      <GoalsProvider>
-        <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
-        <RootNavigator />
-      </GoalsProvider>
-    </LanguageProvider>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScreenBackground />
+      <LanguageProvider>
+        <GoalsProvider>
+          <StatusBar style={themeMode === 'light' ? 'dark' : 'light'} />
+          <RootNavigator />
+        </GoalsProvider>
+      </LanguageProvider>
+    </View>
   );
 }
