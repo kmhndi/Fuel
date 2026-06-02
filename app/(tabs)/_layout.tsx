@@ -36,13 +36,21 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarShowLabel: false,
-        // Floating rounded "bubble" nav: icons only, narrow, detached from edges.
+        // Floating rounded "bubble" nav: icons only, centered, detached from edges.
+        // Percentage insets keep the bar narrow and centered on any screen width,
+        // which clusters the 4 flex:1 icons toward the middle instead of the edges.
         tabBarStyle: {
           position: 'absolute',
-          left: 56,
-          right: 56,
+          left: '20%',
+          right: '20%',
           bottom: (insets.bottom || spacing.md) + spacing.xs,
           height: 58,
+          // Clear the framework's safe-area padding so the icon row fills the
+          // full pill height (the `bottom` offset already lifts it clear of the
+          // home indicator). Without this, paddingBottom pushes icons upward.
+          paddingTop: 0,
+          paddingBottom: 0,
+          paddingHorizontal: 0,
           borderRadius: radius.pill,
           borderTopWidth: 0,
           borderWidth: StyleSheet.hairlineWidth,
