@@ -358,7 +358,7 @@ export default function TodayScreen() {
         }}
         style={({ pressed }) => [
           styles.fab,
-          { bottom: insets.bottom + 76 },
+          { bottom: insets.bottom + 96 },
           pressed && styles.fabPressed,
         ]}
         accessibilityLabel="Log a meal"

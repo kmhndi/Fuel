@@ -23,10 +23,16 @@ function RootNavigator() {
         headerStyle: { backgroundColor: colors.header },
         headerTintColor: colors.text,
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: 'transparent' },
+        // Modals & pushed screens are opaque deep-indigo so the screen behind
+        // them doesn't bleed through. The tab group stays transparent so the
+        // root gradient shows on the main screens.
+        contentStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}
+      />
       <Stack.Screen
         name="add-meal"
         options={{ presentation: 'modal', title: t('title.logMeal') }}

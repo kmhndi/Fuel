@@ -151,7 +151,7 @@ export default function SupplementsScreen() {
         }}
         style={({ pressed }) => [
           styles.fab,
-          { bottom: insets.bottom + 76 },
+          { bottom: insets.bottom + 96 },
           pressed && styles.fabPressed,
         ]}
         accessibilityLabel="Add a supplement"
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing.lg,
-    paddingBottom: 120,
+    paddingBottom: 140,
     gap: spacing.sm,
   },
   summary: {

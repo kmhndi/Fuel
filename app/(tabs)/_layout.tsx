@@ -1,12 +1,14 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useT } from '@/i18n';
-import { colors, spacing, themeMode } from '@/theme';
+import { colors, radius, spacing, themeMode } from '@/theme';
 
 export default function TabsLayout() {
   const { t } = useT();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -17,22 +19,33 @@ export default function TabsLayout() {
         headerTransparent: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
+        // Floating rounded "bubble" nav, detached from the screen edges.
         tabBarStyle: {
           position: 'absolute',
+          left: spacing.lg,
+          right: spacing.lg,
+          bottom: (insets.bottom || spacing.md) + spacing.xs,
+          height: 64,
+          borderRadius: radius.xl,
+          borderTopWidth: 0,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.border,
           backgroundColor: 'transparent',
-          borderTopColor: colors.border,
+          overflow: 'hidden',
+          elevation: 0,
         },
+        tabBarItemStyle: { paddingVertical: spacing.sm },
         tabBarBackground: () => (
           <View style={StyleSheet.absoluteFill}>
             <BlurView
               tint={themeMode === 'light' ? 'light' : 'dark'}
-              intensity={40}
+              intensity={70}
               style={StyleSheet.absoluteFill}
             />
             <View
               style={[
                 StyleSheet.absoluteFill,
-                { backgroundColor: themeMode === 'light' ? 'rgba(255,255,255,0.4)' : 'rgba(11,10,31,0.35)' },
+                { backgroundColor: themeMode === 'light' ? 'rgba(255,255,255,0.3)' : 'rgba(30,27,75,0.28)' },
               ]}
             />
           </View>
