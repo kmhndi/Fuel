@@ -37,12 +37,15 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.textMuted,
         tabBarShowLabel: false,
         // Floating rounded "bubble" nav: icons only, centered, detached from edges.
-        // Percentage insets keep the bar narrow and centered on any screen width,
-        // which clusters the 4 flex:1 icons toward the middle instead of the edges.
+        // Use start/end (NOT left/right): BottomTabBar hardcodes start:0/end:0 on
+        // the container, and start/end win over left/right in RN — so left/right
+        // insets get ignored. 10% each keeps the bar ~80% wide and centered —
+        // detached from the edges, but wide enough that the 4 icons get
+        // comfortable spacing instead of looking cramped.
         tabBarStyle: {
           position: 'absolute',
-          left: '20%',
-          right: '20%',
+          start: '10%',
+          end: '10%',
           bottom: (insets.bottom || spacing.md) + spacing.xs,
           height: 58,
           // Clear the framework's safe-area padding so the icon row fills the
@@ -60,6 +63,11 @@ export default function TabsLayout() {
           elevation: 0,
         },
         tabBarItemStyle: { height: 58 },
+        // Vertically center the icon. Each item's button fills the pill and lays
+        // out with justifyContent:'flex-start' (icon-only tabs still reserve the
+        // absent label's space), pinning the icon to the top. Auto top+bottom
+        // margins on the icon wrapper absorb that free space equally → centered.
+        tabBarIconStyle: { marginTop: 'auto', marginBottom: 'auto' },
         tabBarBackground: () => (
           <View style={StyleSheet.absoluteFill}>
             <BlurView
