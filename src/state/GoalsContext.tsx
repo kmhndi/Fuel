@@ -38,6 +38,8 @@ const FALLBACK: Goals = {
   accent: '#22D3A7',
   waterReminders: false,
   weekdayGoals: null,
+  whoopConnected: false,
+  whoopLastSync: null,
   onboarded: false,
 };
 

@@ -195,6 +195,25 @@ const MIGRATIONS: string[] = [
   `
     ALTER TABLE settings ADD COLUMN language TEXT NOT NULL DEFAULT 'en';
   `,
+  // 9 -> 10: WHOOP integration — tag exercise rows with their source + external
+  // id (for idempotent re-sync), store WHOOP daily energy totals, and record
+  // connection state. OAuth tokens live in expo-secure-store, never in SQLite.
+  `
+    ALTER TABLE exercise ADD COLUMN source TEXT NOT NULL DEFAULT 'manual';
+    ALTER TABLE exercise ADD COLUMN external_id TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_exercise_external
+      ON exercise (external_id) WHERE external_id IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS whoop_daily (
+      day TEXT PRIMARY KEY NOT NULL,
+      calories INTEGER NOT NULL,
+      strain REAL,
+      synced_at TEXT NOT NULL
+    );
+
+    ALTER TABLE settings ADD COLUMN whoop_connected INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE settings ADD COLUMN whoop_last_sync TEXT;
+  `,
 ];
 
 /**

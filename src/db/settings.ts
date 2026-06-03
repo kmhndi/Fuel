@@ -22,6 +22,8 @@ interface SettingsRow {
   accent: string;
   water_reminders: number;
   weekday_goals: string | null;
+  whoop_connected: number;
+  whoop_last_sync: string | null;
   onboarded: number;
 }
 
@@ -45,6 +47,8 @@ const DEFAULTS: Goals = {
   accent: '#22D3A7',
   waterReminders: false,
   weekdayGoals: null,
+  whoopConnected: false,
+  whoopLastSync: null,
   onboarded: false,
 };
 
@@ -85,6 +89,8 @@ export async function getGoals(): Promise<Goals> {
     accent: row.accent,
     waterReminders: row.water_reminders === 1,
     weekdayGoals: parseWeekdayGoals(row.weekday_goals),
+    whoopConnected: row.whoop_connected === 1,
+    whoopLastSync: row.whoop_last_sync,
     onboarded: row.onboarded === 1,
   };
 }
@@ -149,6 +155,33 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
   );
 }
 
+/**
+ * Update only the WHOOP connection state (without touching onboarding or any
+ * other goal fields). Pass `lastSync` to also stamp the last successful sync.
+ */
+export async function setWhoopConnection(
+  connected: boolean,
+  lastSync?: string | null,
+): Promise<void> {
+  const db = getDb();
+  if (lastSync !== undefined) {
+    await db.runAsync(
+      `INSERT INTO settings (id, whoop_connected, whoop_last_sync) VALUES (1, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         whoop_connected = excluded.whoop_connected,
+         whoop_last_sync = excluded.whoop_last_sync`,
+      connected ? 1 : 0,
+      lastSync,
+    );
+  } else {
+    await db.runAsync(
+      `INSERT INTO settings (id, whoop_connected) VALUES (1, ?)
+       ON CONFLICT(id) DO UPDATE SET whoop_connected = excluded.whoop_connected`,
+      connected ? 1 : 0,
+    );
+  }
+}
+
 /** Update only the language preference (without touching onboarding state). */
 export async function setLanguageSetting(language: Language): Promise<void> {
   const db = getDb();
@@ -173,6 +206,7 @@ export async function clearAllData(): Promise<void> {
     DELETE FROM caffeine;
     DELETE FROM checkins;
     DELETE FROM measurements;
+    DELETE FROM whoop_daily;
   `);
   await cancelAllReminders();
 }

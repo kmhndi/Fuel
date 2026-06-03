@@ -77,7 +77,14 @@ export interface Exercise {
   calories: number;
   loggedAt: string;
   day: string;
+  /** Where the entry came from: manual logging or an external sync (WHOOP). */
+  source: ExerciseSource;
+  /** Stable id from the external source (e.g. WHOOP workout id); null when manual. */
+  externalId: string | null;
 }
+
+/** Provenance for an exercise entry. */
+export type ExerciseSource = 'manual' | 'whoop';
 
 /** A body-weight entry, always stored in kilograms. */
 export interface WeightEntry {
@@ -167,7 +174,20 @@ export interface Goals {
    * A null entry (or null array) falls back to `calorieGoal`.
    */
   weekdayGoals: (number | null)[] | null;
+  /** Whether a WHOOP account is currently linked. */
+  whoopConnected: boolean;
+  /** ISO timestamp of the last successful WHOOP sync (null = never). */
+  whoopLastSync: string | null;
   onboarded: boolean;
+}
+
+/** A day's WHOOP-sourced energy summary (total burn includes resting + active). */
+export interface WhoopDaily {
+  day: string;
+  /** Total daily calories burned per WHOOP (kcal). */
+  calories: number;
+  /** WHOOP day strain score (0–21), or null if unavailable. */
+  strain: number | null;
 }
 
 export interface NewMeal extends Macros {

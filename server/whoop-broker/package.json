@@ -1,0 +1,14 @@
+{
+  "name": "fuel-whoop-broker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stateless token broker for Fuel's WHOOP OAuth integration. Holds the WHOOP client secret and performs the code->token exchange and refresh.",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.2.0",
+    "typescript": "^5.5.0"
+  }
+}

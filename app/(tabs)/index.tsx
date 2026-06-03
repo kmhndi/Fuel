@@ -20,6 +20,7 @@ import {
   type DaySummary,
 } from '@/db/meals';
 import { getExerciseTotal } from '@/db/exercise';
+import { getWhoopDaily } from '@/db/whoop';
 import { getLatestWeight } from '@/db/weights';
 import { adjustWater, getWater } from '@/db/water';
 import { addCaffeine, clearCaffeine, getCaffeine } from '@/db/caffeine';
@@ -76,6 +77,7 @@ export default function TodayScreen() {
   const [water, setWater] = useState(0);
   const [caffeine, setCaffeine] = useState(0);
   const [exercise, setExercise] = useState(0);
+  const [whoopBurn, setWhoopBurn] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [checkin, setCheckin] = useState<CheckIn | null>(null);
   const [categories, setCategories] = useState<MealCategory[]>([]);
@@ -83,7 +85,7 @@ export default function TodayScreen() {
   const [celebrate, setCelebrate] = useState(false);
 
   const load = useCallback(async () => {
-    const [dayMeals, daySummary, glasses, mg, burned, loggedDays, ci, cats, w] =
+    const [dayMeals, daySummary, glasses, mg, burned, loggedDays, ci, cats, w, whoop] =
       await Promise.all([
         getMealsForDay(day),
         getDaySummary(day),
@@ -94,12 +96,14 @@ export default function TodayScreen() {
         getCheckIn(day),
         getCategories(),
         getLatestWeight(),
+        getWhoopDaily(day),
       ]);
     setMeals(dayMeals);
     setSummary(daySummary);
     setWater(glasses);
     setCaffeine(mg);
     setExercise(burned);
+    setWhoopBurn(whoop?.calories ?? null);
     setStreak(streakFromDays(loggedDays));
     setCheckin(ci);
     setCategories(cats);
@@ -251,6 +255,7 @@ export default function TodayScreen() {
                 eaten={summary.calories}
                 exercise={exercise}
                 restingBurn={restingBurn}
+                whoopBurn={whoopBurn}
                 onAddExercise={() => router.push(`/add-exercise?day=${day}`)}
                 onSetResting={() => router.push('/settings')}
               />
@@ -455,25 +460,32 @@ function DayOverview({
   );
 }
 
-/** Energy balance: eaten vs burned (resting + exercise) → deficit/surplus. */
+/**
+ * Energy balance: eaten vs burned → deficit/surplus. When a WHOOP daily total
+ * is present it is authoritative (it already includes resting + active burn),
+ * so it replaces the resting + exercise estimate to avoid double-counting.
+ */
 function EnergyBalanceCard({
   eaten,
   exercise,
   restingBurn,
+  whoopBurn,
   onAddExercise,
   onSetResting,
 }: {
   eaten: number;
   exercise: number;
   restingBurn: number | null;
+  whoopBurn: number | null;
   onAddExercise: () => void;
   onSetResting: () => void;
 }) {
   const { t } = useT();
-  const burned = (restingBurn ?? 0) + exercise;
+  const usingWhoop = whoopBurn != null;
+  const burned = usingWhoop ? whoopBurn : (restingBurn ?? 0) + exercise;
   const net = eaten - burned; // negative = deficit
   const deficit = net < 0;
-  const hasBurn = restingBurn != null || exercise > 0;
+  const hasBurn = usingWhoop || restingBurn != null || exercise > 0;
 
   return (
     <Card style={styles.balanceCard}>
@@ -482,7 +494,7 @@ function EnergyBalanceCard({
         <Ionicons name="remove" size={16} color={colors.textMuted} />
         <Pressable onPress={onAddExercise} style={styles.balanceCellPress}>
           <BalanceCell
-            label={restingBurn != null ? t('today.burned') : t('today.exercise')}
+            label={usingWhoop || restingBurn != null ? t('today.burned') : t('today.exercise')}
             value={burned}
             color={colors.text}
           />
@@ -505,13 +517,20 @@ function EnergyBalanceCard({
       ) : null}
 
       <View style={styles.balanceMetaRow}>
-        <Pressable onPress={onSetResting} hitSlop={6}>
-          <Text style={styles.balanceMeta}>
-            {restingBurn != null
-              ? t('today.restingAdjust', { n: restingBurn.toLocaleString() })
-              : t('today.restingPrompt')}
-          </Text>
-        </Pressable>
+        {usingWhoop ? (
+          <View style={styles.exerciseChip}>
+            <Ionicons name="fitness" size={13} color={colors.accent} />
+            <Text style={styles.exerciseText}>{t('today.viaWhoop')}</Text>
+          </View>
+        ) : (
+          <Pressable onPress={onSetResting} hitSlop={6}>
+            <Text style={styles.balanceMeta}>
+              {restingBurn != null
+                ? t('today.restingAdjust', { n: restingBurn.toLocaleString() })
+                : t('today.restingPrompt')}
+            </Text>
+          </Pressable>
+        )}
         <Pressable onPress={onAddExercise} hitSlop={6} style={styles.exerciseChip}>
           <Ionicons name="barbell-outline" size={13} color={colors.accent} />
           <Text style={styles.exerciseText}>

@@ -15,6 +15,13 @@ import Constants from 'expo-constants';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getGoals, saveGoals, clearAllData } from '@/db/settings';
+import {
+  connectWhoop,
+  disconnectWhoop,
+  isWhoopConfigured,
+  syncWhoop,
+  WhoopAuthError,
+} from '@/integrations/whoop';
 import { updateWidgetSnapshot } from '@/widgets';
 import {
   applyWaterReminders,
@@ -83,6 +90,9 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notifGranted, setNotifGranted] = useState(true);
+  const [whoopConnected, setWhoopConnected] = useState(false);
+  const [whoopLastSync, setWhoopLastSync] = useState<string | null>(null);
+  const [whoopBusy, setWhoopBusy] = useState(false);
 
   useEffect(() => {
     getGoals().then((g) => {
@@ -99,6 +109,8 @@ export default function SettingsScreen() {
       setWaterReminders(g.waterReminders);
       setTheme(g.theme);
       setAccent(g.accent);
+      setWhoopConnected(g.whoopConnected);
+      setWhoopLastSync(g.whoopLastSync);
     });
   }, []);
 
@@ -218,6 +230,79 @@ export default function SettingsScreen() {
         ],
       );
     }
+  };
+
+  const refreshWhoopState = async () => {
+    const g = await getGoals();
+    setWhoopConnected(g.whoopConnected);
+    setWhoopLastSync(g.whoopLastSync);
+  };
+
+  const onConnectWhoop = async () => {
+    if (whoopBusy) return;
+    if (!isWhoopConfigured()) {
+      Alert.alert(t('whoop.unavailableTitle'), t('whoop.unavailableMsg'));
+      return;
+    }
+    setWhoopBusy(true);
+    try {
+      const result = await connectWhoop();
+      if (result === 'connected') {
+        await syncWhoop();
+        await refreshWhoopState();
+        await refresh();
+        successFeedback();
+        Alert.alert(t('whoop.connectedTitle'), t('whoop.connectedMsg'));
+      } else if (result === 'error') {
+        Alert.alert(t('whoop.errorTitle'), t('whoop.errorMsg'));
+      }
+    } catch {
+      Alert.alert(t('whoop.errorTitle'), t('whoop.errorMsg'));
+    } finally {
+      setWhoopBusy(false);
+    }
+  };
+
+  const onSyncWhoop = async () => {
+    if (whoopBusy) return;
+    setWhoopBusy(true);
+    try {
+      await syncWhoop();
+      await refreshWhoopState();
+      await refresh();
+      successFeedback();
+    } catch (e) {
+      if (e instanceof WhoopAuthError) {
+        await disconnectWhoop();
+        await refreshWhoopState();
+        await refresh();
+        Alert.alert(t('whoop.reauthTitle'), t('whoop.reauthMsg'));
+      } else {
+        Alert.alert(t('whoop.errorTitle'), t('whoop.errorMsg'));
+      }
+    } finally {
+      setWhoopBusy(false);
+    }
+  };
+
+  const onDisconnectWhoop = () => {
+    Alert.alert(t('whoop.disconnectTitle'), t('whoop.disconnectMsg'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('whoop.disconnect'),
+        style: 'destructive',
+        onPress: async () => {
+          setWhoopBusy(true);
+          try {
+            await disconnectWhoop();
+            await refreshWhoopState();
+            await refresh();
+          } finally {
+            setWhoopBusy(false);
+          }
+        },
+      },
+    ]);
   };
 
   const confirmClear = () => {
@@ -398,6 +483,46 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        <Text style={styles.sectionTitle}>{t('whoop.section')}</Text>
+        <Card style={styles.card}>
+          <View style={styles.notifRow}>
+            <Ionicons
+              name={whoopConnected ? 'fitness' : 'fitness-outline'}
+              size={22}
+              color={whoopConnected ? colors.accent : colors.textMuted}
+            />
+            <Text style={styles.notifText}>
+              {whoopConnected ? t('whoop.connected') : t('whoop.notConnected')}
+            </Text>
+          </View>
+          <Text style={styles.privacy}>{t('whoop.lead')}</Text>
+          {whoopConnected ? (
+            <>
+              {whoopLastSync ? (
+                <Text style={styles.hint}>
+                  {t('whoop.lastSync', {
+                    when: new Date(whoopLastSync).toLocaleString(),
+                  })}
+                </Text>
+              ) : null}
+              <View style={styles.row}>
+                <View style={styles.cell}>
+                  <GhostButton label={t('whoop.syncNow')} onPress={onSyncWhoop} />
+                </View>
+                <View style={styles.cell}>
+                  <GhostButton
+                    label={t('whoop.disconnect')}
+                    tone="danger"
+                    onPress={onDisconnectWhoop}
+                  />
+                </View>
+              </View>
+            </>
+          ) : (
+            <GhostButton label={t('whoop.connect')} onPress={onConnectWhoop} />
+          )}
+        </Card>
+
         <Text style={styles.sectionTitle}>{t('set.backup')}</Text>
         <Card style={styles.card}>
           <Text style={styles.privacy}>
@@ -425,7 +550,7 @@ export default function SettingsScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <PrimaryButton label={t('set.saveGoals')} onPress={save} loading={saving || busy} />
+        <PrimaryButton label={t('set.saveGoals')} onPress={save} loading={saving || busy || whoopBusy} />
       </View>
     </KeyboardAvoidingView>
   );
