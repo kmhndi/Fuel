@@ -27,7 +27,10 @@ Bilingual (English / العربية) with a deep-indigo "glass" interface.
 - Honest **eaten vs burned → daily deficit / surplus**, not just a goal.
 - Log **exercise** (calories add to what you burned).
 - Optional **resting burn (RMR)** — entered or estimated from your profile.
-- Built-in **TDEE goal calculator** (Mifflin-St Jeor) for lose/maintain/gain.
+- Built-in **TDEE goal calculator** — Mifflin-St Jeor, or **Katch-McArdle** when
+  you add body-fat %. Choose a goal and a **weekly pace** (gentle / standard /
+  aggressive), and it suggests **calories + macros** (protein scaled to your
+  bodyweight) in an **editable confirmation step** before applying as your goal.
 - **Per-weekday calorie goals** (training vs rest days).
 
 ### Hydration, caffeine, body
@@ -52,6 +55,9 @@ Bilingual (English / العربية) with a deep-indigo "glass" interface.
   daily **mood & energy** check-in, and a goal-met **confetti** celebration.
 
 ### Personal & private
+- **Guided setup** — an animated, tap-to-answer onboarding wizard (language,
+  sex, goal, activity, your stats, pace) that builds your calorie + macro
+  targets for you, then lets you fine-tune them before you start.
 - **Light / dark theme** + a choice of **accent color** (the home-screen app
   icon switches to match).
 - **Backup / restore** your data as a file; share a daily **summary card**.
