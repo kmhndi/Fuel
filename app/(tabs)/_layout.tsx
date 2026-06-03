@@ -1,6 +1,7 @@
+import { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Link, Tabs } from 'expo-router';
+import { Link, Tabs, useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useT } from '@/i18n';
@@ -8,7 +9,22 @@ import { colors, radius, spacing, themeMode } from '@/theme';
 
 export default function TabsLayout() {
   const { t } = useT();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Debug-only: tap the More tab 10× in quick succession to replay onboarding.
+  const moreTaps = useRef(0);
+  const lastMoreTap = useRef(0);
+  const onMoreTabPress = () => {
+    if (!__DEV__) return;
+    const now = Date.now();
+    moreTaps.current = now - lastMoreTap.current > 1500 ? 1 : moreTaps.current + 1;
+    lastMoreTap.current = now;
+    if (moreTaps.current >= 10) {
+      moreTaps.current = 0;
+      router.push('/onboarding');
+    }
+  };
   return (
     <Tabs
       screenOptions={{
@@ -134,6 +150,7 @@ export default function TabsLayout() {
             <Ionicons name="grid" color={color} size={size} />
           ),
         }}
+        listeners={{ tabPress: onMoreTabPress }}
       />
     </Tabs>
   );

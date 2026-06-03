@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
   },
   checkinEmoji: { fontSize: 20 },
   checkinText: { flex: 1, color: colors.text, fontSize: font.size.sm, fontWeight: font.weight.medium },
-  quickActions: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  quickActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, marginBottom: spacing.md },
   quickAction: {
     flex: 1,
     flexDirection: 'row',

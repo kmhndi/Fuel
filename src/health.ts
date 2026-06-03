@@ -91,6 +91,62 @@ export function tdee(
   return base === null ? null : Math.round(base * activity);
 }
 
+/**
+ * Katch-McArdle basal metabolic rate from lean body mass — more accurate when
+ * body-fat % is known. Returns null unless weight and a sensible bf% are given.
+ */
+export function bmrKatch(
+  weightKg: number | null,
+  bodyFatPct: number | null,
+): number | null {
+  if (!weightKg || weightKg <= 0) return null;
+  if (bodyFatPct == null || bodyFatPct <= 0 || bodyFatPct >= 100) return null;
+  const leanMass = weightKg * (1 - bodyFatPct / 100);
+  return Math.round(370 + 21.6 * leanMass);
+}
+
+export interface TdeeInput {
+  sex: Sex | null;
+  age: number | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  bodyFatPct?: number | null;
+  activity: number;
+}
+
+/**
+ * TDEE using Katch-McArdle when body-fat % is supplied (lean-mass based),
+ * otherwise Mifflin-St Jeor. Returns null when inputs are insufficient.
+ */
+export function estimateTdee({
+  sex,
+  age,
+  heightCm,
+  weightKg,
+  bodyFatPct,
+  activity,
+}: TdeeInput): number | null {
+  const base =
+    bmrKatch(weightKg, bodyFatPct ?? null) ?? bmr(sex, age, heightCm, weightKg);
+  return base === null ? null : Math.round(base * activity);
+}
+
+export type GoalDirection = 'lose' | 'maintain' | 'gain';
+
+/**
+ * A single calorie target from a maintenance TDEE, a direction, and a daily
+ * kcal adjustment (the pace). Maintain ignores the adjustment.
+ */
+export function targetFromPace(
+  tdeeValue: number,
+  direction: GoalDirection,
+  kcalPerDay: number,
+): number {
+  if (direction === 'maintain') return Math.round(tdeeValue);
+  const delta = direction === 'lose' ? -kcalPerDay : kcalPerDay;
+  return Math.max(0, Math.round(tdeeValue + delta));
+}
+
 /** Calorie targets for losing / maintaining / gaining around a TDEE. */
 export function goalTargets(tdeeValue: number) {
   return {
