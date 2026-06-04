@@ -37,6 +37,8 @@ const FALLBACK: Goals = {
   language: 'en',
   accent: '#22D3A7',
   waterReminders: false,
+  mealReminders: false,
+  eveningReminder: false,
   weekdayGoals: null,
   whoopConnected: false,
   whoopLastSync: null,

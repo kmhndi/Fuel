@@ -214,6 +214,13 @@ const MIGRATIONS: string[] = [
     ALTER TABLE settings ADD COLUMN whoop_connected INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE settings ADD COLUMN whoop_last_sync TEXT;
   `,
+  // 10 -> 11: engagement reminders (midday meal nudge + evening streak nudge)
+  // and a one-shot flag for the in-app store-review prompt.
+  `
+    ALTER TABLE settings ADD COLUMN meal_reminders INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE settings ADD COLUMN evening_reminder INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE settings ADD COLUMN review_prompted INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 /**

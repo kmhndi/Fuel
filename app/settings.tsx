@@ -24,6 +24,7 @@ import {
 } from '@/integrations/whoop';
 import { updateWidgetSnapshot } from '@/widgets';
 import {
+  applyEngagementReminders,
   applyWaterReminders,
   getPermissionGranted,
   requestNotificationPermission,
@@ -84,6 +85,8 @@ export default function SettingsScreen() {
   const [caffeineLimit, setCaffeineLimit] = useState('');
   const [restingBurn, setRestingBurn] = useState('');
   const [waterReminders, setWaterReminders] = useState(false);
+  const [mealReminders, setMealReminders] = useState(false);
+  const [eveningReminder, setEveningReminder] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [accent, setAccent] = useState<string>(ACCENT_CHOICES[0]);
   const [appearanceChanged, setAppearanceChanged] = useState(false);
@@ -107,6 +110,8 @@ export default function SettingsScreen() {
       setCaffeineLimit(String(g.caffeineLimit));
       setRestingBurn(g.restingBurn != null ? String(g.restingBurn) : '');
       setWaterReminders(g.waterReminders);
+      setMealReminders(g.mealReminders);
+      setEveningReminder(g.eveningReminder);
       setTheme(g.theme);
       setAccent(g.accent);
       setWhoopConnected(g.whoopConnected);
@@ -118,6 +123,27 @@ export default function SettingsScreen() {
     setWaterReminders(value);
     await saveGoals({ waterReminders: value });
     await applyWaterReminders(value);
+    await refresh();
+  };
+
+  const engagementCopy = () => ({
+    mealTitle: t('notif.mealTitle'),
+    mealBody: t('notif.mealBody'),
+    eveningTitle: t('notif.eveningTitle'),
+    eveningBody: t('notif.eveningBody'),
+  });
+
+  const toggleMealReminders = async (value: boolean) => {
+    setMealReminders(value);
+    await saveGoals({ mealReminders: value });
+    await applyEngagementReminders({ meal: value, evening: eveningReminder }, engagementCopy());
+    await refresh();
+  };
+
+  const toggleEveningReminder = async (value: boolean) => {
+    setEveningReminder(value);
+    await saveGoals({ eveningReminder: value });
+    await applyEngagementReminders({ meal: mealReminders, evening: value }, engagementCopy());
     await refresh();
   };
 
@@ -479,6 +505,30 @@ export default function SettingsScreen() {
               onValueChange={toggleWaterReminders}
               trackColor={{ false: colors.surfaceAlt, true: colors.accentDim }}
               thumbColor={waterReminders ? colors.accent : colors.textMuted}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.switchTitle}>{t('set.mealReminders')}</Text>
+              <Text style={styles.switchSub}>{t('set.mealRemindersSub')}</Text>
+            </View>
+            <Switch
+              value={mealReminders}
+              onValueChange={toggleMealReminders}
+              trackColor={{ false: colors.surfaceAlt, true: colors.accentDim }}
+              thumbColor={mealReminders ? colors.accent : colors.textMuted}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.switchTitle}>{t('set.eveningReminder')}</Text>
+              <Text style={styles.switchSub}>{t('set.eveningReminderSub')}</Text>
+            </View>
+            <Switch
+              value={eveningReminder}
+              onValueChange={toggleEveningReminder}
+              trackColor={{ false: colors.surfaceAlt, true: colors.accentDim }}
+              thumbColor={eveningReminder ? colors.accent : colors.textMuted}
             />
           </View>
         </Card>

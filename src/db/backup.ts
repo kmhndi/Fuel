@@ -8,6 +8,9 @@ export interface BackupData {
   tables: Record<string, unknown[]>;
 }
 
+// Every user table, kept in sync with the migrations in ./index. Anything
+// omitted here is silently dropped from backups, so each new table must be
+// added or its data is lost on backup/restore.
 const TABLES = [
   'meals',
   'foods',
@@ -16,6 +19,12 @@ const TABLES = [
   'water',
   'weights',
   'exercise',
+  'caffeine',
+  'checkins',
+  'measurements',
+  'presets',
+  'meal_categories',
+  'whoop_daily',
   'settings',
 ];
 
@@ -28,16 +37,18 @@ export async function collectBackup(): Promise<BackupData> {
   }
   return {
     app: 'fuel',
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     tables,
   };
 }
 
 /**
- * Replace all data with the contents of a backup. Runs in a single
+ * Replace stored data with the contents of a backup. Runs in a single
  * transaction so a malformed file can't leave a half-restored database.
- * Throws if the file isn't a recognisable Fuel backup.
+ * Tables absent from the file are left untouched, so restoring an older
+ * backup can't wipe data the file doesn't carry. Throws if the file isn't a
+ * recognisable Fuel backup.
  */
 export async function restoreBackup(data: BackupData): Promise<void> {
   if (!data || data.app !== 'fuel' || typeof data.tables !== 'object') {
@@ -47,9 +58,11 @@ export async function restoreBackup(data: BackupData): Promise<void> {
 
   await db.withExclusiveTransactionAsync(async (tx) => {
     for (const table of TABLES) {
-      await tx.execAsync(`DELETE FROM ${table}`);
       const rows = data.tables[table];
+      // A table missing from the file (e.g. an older export) is left as-is
+      // rather than wiped — only clear and replace what the backup contains.
       if (!Array.isArray(rows)) continue;
+      await tx.execAsync(`DELETE FROM ${table}`);
       for (const row of rows) {
         if (!row || typeof row !== 'object') continue;
         const cols = Object.keys(row as Record<string, unknown>);

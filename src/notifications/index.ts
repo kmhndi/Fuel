@@ -147,6 +147,86 @@ export async function applyWaterReminders(enabled: boolean): Promise<void> {
   }
 }
 
+const ENGAGEMENT_CHANNEL_ID = 'engagement-reminders';
+/** When the midday meal-logging nudge fires. */
+const MEAL_REMINDER_HOUR = 13;
+/** When the evening streak/check-in nudge fires. */
+const EVENING_REMINDER_HOUR = 20;
+const EVENING_REMINDER_MINUTE = 30;
+
+/** Localised copy for the engagement reminders, supplied by the caller. */
+export interface EngagementCopy {
+  mealTitle: string;
+  mealBody: string;
+  eveningTitle: string;
+  eveningBody: string;
+}
+
+/** Remove any previously scheduled engagement reminders (tagged via data.type). */
+export async function cancelEngagementReminders(): Promise<void> {
+  try {
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(
+      all
+        .filter((n) => (n.content.data as { type?: string })?.type === 'engagement')
+        .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+    );
+  } catch {
+    // Scheduler unavailable (e.g. web) — nothing to cancel.
+  }
+}
+
+/**
+ * Enable or disable the daily engagement reminders: a midday meal-logging nudge
+ * and an evening streak nudge. Clears existing ones first so toggling can't stack
+ * duplicates. Copy is passed in so the bodies follow the app's current language.
+ */
+export async function applyEngagementReminders(
+  enabled: { meal: boolean; evening: boolean },
+  copy: EngagementCopy,
+): Promise<void> {
+  await cancelEngagementReminders();
+  if (Platform.OS === 'android' && (enabled.meal || enabled.evening)) {
+    await Notifications.setNotificationChannelAsync(ENGAGEMENT_CHANNEL_ID, {
+      name: 'Daily reminders',
+      importance: Notifications.AndroidImportance.DEFAULT,
+    }).catch(() => {});
+  }
+  const channel =
+    Platform.OS === 'android' ? { channelId: ENGAGEMENT_CHANNEL_ID } : {};
+
+  if (enabled.meal) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: copy.mealTitle,
+        body: copy.mealBody,
+        data: { type: 'engagement' },
+        ...channel,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: MEAL_REMINDER_HOUR,
+        minute: 0,
+      },
+    }).catch(() => {});
+  }
+  if (enabled.evening) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: copy.eveningTitle,
+        body: copy.eveningBody,
+        data: { type: 'engagement' },
+        ...channel,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: EVENING_REMINDER_HOUR,
+        minute: EVENING_REMINDER_MINUTE,
+      },
+    }).catch(() => {});
+  }
+}
+
 /** Cancel every scheduled reminder (used when wiping all data). */
 export async function cancelAllReminders(): Promise<void> {
   try {

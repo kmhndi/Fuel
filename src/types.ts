@@ -169,6 +169,10 @@ export interface Goals {
   accent: string;
   /** Whether interval water reminders are enabled. */
   waterReminders: boolean;
+  /** Whether the midday "log your meals" reminder is enabled. */
+  mealReminders: boolean;
+  /** Whether the evening streak/check-in reminder is enabled. */
+  eveningReminder: boolean;
   /**
    * Optional per-weekday calorie overrides, indexed 0=Sunday..6=Saturday.
    * A null entry (or null array) falls back to `calorieGoal`.

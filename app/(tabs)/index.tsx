@@ -42,6 +42,7 @@ import { MacroBars } from '@/components/MacroBars';
 import { WaterCard } from '@/components/WaterCard';
 import { CaffeineCard } from '@/components/CaffeineCard';
 import { Celebration } from '@/components/Celebration';
+import { maybeAskForReview } from '@/reviews';
 import { Card, EmptyState, GlassCard } from '@/components/ui';
 import { successFeedback, tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
@@ -104,13 +105,17 @@ export default function TodayScreen() {
     setCaffeine(mg);
     setExercise(burned);
     setWhoopBurn(whoop?.calories ?? null);
-    setStreak(streakFromDays(loggedDays));
+    const currentStreak = streakFromDays(loggedDays);
+    setStreak(currentStreak);
     setCheckin(ci);
     setCategories(cats);
     setWeightKg(w?.kg ?? null);
     // Refresh the home/lock-screen widgets with today's totals (always today,
     // even when viewing another day). Fire-and-forget; safe no-op on web.
     void updateWidgetSnapshot();
+    // Once the user has built a real logging streak, ask for a store review at
+    // a natural high point. No-ops after the first prompt (and off-device).
+    void maybeAskForReview(currentStreak);
   }, [day]);
 
   useFocusEffect(

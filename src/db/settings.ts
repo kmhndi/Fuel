@@ -21,6 +21,8 @@ interface SettingsRow {
   language: Language;
   accent: string;
   water_reminders: number;
+  meal_reminders: number;
+  evening_reminder: number;
   weekday_goals: string | null;
   whoop_connected: number;
   whoop_last_sync: string | null;
@@ -46,6 +48,8 @@ const DEFAULTS: Goals = {
   language: 'en',
   accent: '#22D3A7',
   waterReminders: false,
+  mealReminders: false,
+  eveningReminder: false,
   weekdayGoals: null,
   whoopConnected: false,
   whoopLastSync: null,
@@ -88,6 +92,8 @@ export async function getGoals(): Promise<Goals> {
     language: row.language === 'ar' ? 'ar' : 'en',
     accent: row.accent,
     waterReminders: row.water_reminders === 1,
+    mealReminders: row.meal_reminders === 1,
+    eveningReminder: row.evening_reminder === 1,
     weekdayGoals: parseWeekdayGoals(row.weekday_goals),
     whoopConnected: row.whoop_connected === 1,
     whoopLastSync: row.whoop_last_sync,
@@ -110,8 +116,9 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     `INSERT INTO settings
        (id, calorie_goal, protein_goal, carb_goal, fat_goal, water_goal,
         glass_ml, weight_unit, sex, age, height_cm, activity, goal_weight_kg,
-        caffeine_limit, resting_burn, theme, language, accent, water_reminders, weekday_goals, onboarded)
-     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        caffeine_limit, resting_burn, theme, language, accent, water_reminders,
+        meal_reminders, evening_reminder, weekday_goals, onboarded)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
      ON CONFLICT(id) DO UPDATE SET
        calorie_goal = excluded.calorie_goal,
        protein_goal = excluded.protein_goal,
@@ -131,6 +138,8 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
        language = excluded.language,
        accent = excluded.accent,
        water_reminders = excluded.water_reminders,
+       meal_reminders = excluded.meal_reminders,
+       evening_reminder = excluded.evening_reminder,
        weekday_goals = excluded.weekday_goals,
        onboarded = 1`,
     Math.max(0, Math.round(next.calorieGoal)),
@@ -151,6 +160,8 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     next.language,
     next.accent,
     next.waterReminders ? 1 : 0,
+    next.mealReminders ? 1 : 0,
+    next.eveningReminder ? 1 : 0,
     next.weekdayGoals ? JSON.stringify(next.weekdayGoals) : null,
   );
 }
@@ -189,6 +200,24 @@ export async function setLanguageSetting(language: Language): Promise<void> {
     `INSERT INTO settings (id, language) VALUES (1, ?)
      ON CONFLICT(id) DO UPDATE SET language = excluded.language`,
     language,
+  );
+}
+
+/** Whether the one-time in-app store-review prompt has already been shown. */
+export async function getReviewPrompted(): Promise<boolean> {
+  const db = getDb();
+  const row = await db.getFirstAsync<{ review_prompted: number }>(
+    'SELECT review_prompted FROM settings WHERE id = 1',
+  );
+  return row?.review_prompted === 1;
+}
+
+/** Mark the in-app store-review prompt as shown so it never fires again. */
+export async function setReviewPrompted(): Promise<void> {
+  const db = getDb();
+  await db.runAsync(
+    `INSERT INTO settings (id, review_prompted) VALUES (1, 1)
+     ON CONFLICT(id) DO UPDATE SET review_prompted = 1`,
   );
 }
 
