@@ -312,3 +312,24 @@ export async function getDailyTotals(
   );
   return rows.reverse();
 }
+
+/** Most-logged meals (by name) within a day range, most frequent first. */
+export async function getTopMealsByFrequency(
+  startDay: string,
+  endDay: string,
+  limit: number,
+): Promise<{ name: string; count: number }[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{ name: string; n: number }>(
+    `SELECT name, COUNT(*) AS n
+       FROM meals
+      WHERE day >= ? AND day <= ?
+      GROUP BY name
+      ORDER BY n DESC, name ASC
+      LIMIT ?`,
+    startDay,
+    endDay,
+    limit,
+  );
+  return rows.map((r) => ({ name: r.name, count: r.n }));
+}

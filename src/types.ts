@@ -70,6 +70,9 @@ export type ThemeMode = 'dark' | 'light';
 
 export type Language = 'en' | 'ar';
 
+/** The home-screen companion creature the user has chosen. */
+export type MascotCharacter = 'fox' | 'dragon' | 'hamster' | 'shiba';
+
 /** A logged bout of exercise whose calories add back to the daily budget. */
 export interface Exercise {
   id: number;
@@ -167,6 +170,8 @@ export interface Goals {
   language: Language;
   /** Accent color hex. */
   accent: string;
+  /** Home-screen companion creature. Defaults to the dragon "Volt". */
+  mascot: MascotCharacter;
   /** Whether interval water reminders are enabled. */
   waterReminders: boolean;
   /** Whether the midday "log your meals" reminder is enabled. */

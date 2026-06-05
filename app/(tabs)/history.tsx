@@ -6,16 +6,17 @@ import Svg, { Polyline } from 'react-native-svg';
 import { getDailyTotals } from '@/db/meals';
 import { getDailyAdherence, getRecentAdherence } from '@/db/supplements';
 import { getWaterTotals } from '@/db/water';
+import { getRecentCheckIns } from '@/db/checkins';
 import { getLatestWeight } from '@/db/weights';
 import { useGoals } from '@/state/GoalsContext';
 import { useT } from '@/i18n';
 import { Card, EmptyState, SegmentedControl } from '@/components/ui';
 import { kgToDisplay } from '@/health';
-import { movingAverage } from '@/stats';
+import { buildFuelInsights, movingAverage, type FuelInsight } from '@/stats';
 import { macroColors } from '@/nutrition';
 import { tapFeedback } from '@/haptics';
 import { colors, font, radius, spacing } from '@/theme';
-import type { WeightEntry } from '@/types';
+import type { CheckIn, WeightEntry } from '@/types';
 
 type Range = '7' | '14' | '30';
 
@@ -29,6 +30,8 @@ export default function TrendsScreen() {
   const [dots, setDots] = useState<{ day: string; taken: number; total: number }[]>([]);
   const [water, setWater] = useState<{ day: string; glasses: number }[]>([]);
   const [weight, setWeight] = useState<WeightEntry | null>(null);
+  const [totals30, setTotals30] = useState<{ day: string; calories: number; protein: number }[]>([]);
+  const [checkins, setCheckins] = useState<CheckIn[]>([]);
 
   const days = Number(range);
 
@@ -38,6 +41,10 @@ export default function TrendsScreen() {
     getDailyAdherence(Math.min(days, 30)).then(setDots);
     getWaterTotals(days).then(setWater);
     getLatestWeight().then(setWeight);
+    // Insights use a fixed 30-day window so they don't disappear when the
+    // chart range is switched to 7 or 14 days.
+    getDailyTotals(30).then(setTotals30);
+    getRecentCheckIns(30).then(setCheckins);
   }, [days]);
 
   useFocusEffect(
@@ -62,6 +69,7 @@ export default function TrendsScreen() {
   const avgWater = water.length > 0
     ? (water.reduce((s, w) => s + w.glasses, 0) / water.length).toFixed(1)
     : '0';
+  const insights = buildFuelInsights(totals30, checkins, goals);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -94,6 +102,31 @@ export default function TrendsScreen() {
             <Stat label={tr('trends.avgProtein')} value={`${avgProtein}`} unit="g" accent={macroColors.protein} />
             <Stat label={tr('trends.avgWater')} value={avgWater} unit={tr('trends.glasses')} accent="#38BDF8" />
           </View>
+
+          {insights.length > 0 ? (
+            <Card>
+              <Text style={styles.chartTitle}>{tr('insight.title')}</Text>
+              <View style={styles.insightList}>
+                {insights.map((ins) => (
+                  <View key={`${ins.dimension}-${ins.metric}`} style={styles.insightRow}>
+                    <Ionicons
+                      name={ins.metric === 'energy' ? 'flash-outline' : 'happy-outline'}
+                      size={18}
+                      color={colors.accent}
+                    />
+                    <Text style={styles.insightItemText}>
+                      {tr(insightKey(ins), { on: ins.on.toFixed(1), off: ins.off.toFixed(1) })}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </Card>
+          ) : hasData ? (
+            <View style={styles.hintCard}>
+              <Ionicons name="bulb-outline" size={16} color={colors.textMuted} />
+              <Text style={styles.hintText}>{tr('insight.hint')}</Text>
+            </View>
+          ) : null}
 
           <Card>
             <Text style={styles.chartTitle}>{tr('trends.caloriesTitle', { n: totals.length })}</Text>
@@ -201,6 +234,13 @@ function Stat({
   );
 }
 
+function insightKey(ins: FuelInsight) {
+  if (ins.dimension === 'protein') {
+    return ins.metric === 'energy' ? 'insight.proteinEnergy' : 'insight.proteinMood';
+  }
+  return ins.metric === 'energy' ? 'insight.calorieEnergy' : 'insight.calorieMood';
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg, paddingBottom: 132, gap: spacing.md },
@@ -216,6 +256,21 @@ const styles = StyleSheet.create({
   statValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs },
   statValue: { color: colors.text, fontSize: font.size.xl, fontWeight: font.weight.bold },
   statUnit: { color: colors.textMuted, fontSize: font.size.sm },
+  insightList: { gap: spacing.md, marginTop: spacing.md },
+  insightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  insightItemText: { flex: 1, color: colors.text, fontSize: font.size.sm, lineHeight: 20 },
+  hintCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  hintText: { flex: 1, color: colors.textMuted, fontSize: font.size.sm },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   chartTitle: { color: colors.text, fontSize: font.size.md, fontWeight: font.weight.semibold },
   adherencePct: { color: colors.accent, fontSize: font.size.md, fontWeight: font.weight.bold },

@@ -47,6 +47,10 @@ function RootNavigator() {
         options={{ presentation: 'modal', title: t('title.logExercise') }}
       />
       <Stack.Screen
+        name="roulette"
+        options={{ presentation: 'modal', title: t('title.roulette') }}
+      />
+      <Stack.Screen
         name="settings"
         options={{ presentation: 'modal', title: t('title.settings') }}
       />
@@ -65,6 +69,10 @@ function RootNavigator() {
       <Stack.Screen
         name="share-day"
         options={{ presentation: 'modal', title: t('title.shareDay') }}
+      />
+      <Stack.Screen
+        name="wrapped"
+        options={{ presentation: 'modal', title: t('title.wrapped') }}
       />
       <Stack.Screen
         name="goal-calculator"

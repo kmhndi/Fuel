@@ -1,6 +1,6 @@
 import { getDb } from './index';
 import { cancelAllReminders } from '../notifications';
-import type { Goals, Language, Sex, ThemeMode, WeightUnit } from '../types';
+import type { Goals, Language, MascotCharacter, Sex, ThemeMode, WeightUnit } from '../types';
 
 interface SettingsRow {
   calorie_goal: number;
@@ -20,6 +20,7 @@ interface SettingsRow {
   theme: ThemeMode;
   language: Language;
   accent: string;
+  mascot: MascotCharacter;
   water_reminders: number;
   meal_reminders: number;
   evening_reminder: number;
@@ -47,6 +48,7 @@ const DEFAULTS: Goals = {
   theme: 'dark',
   language: 'en',
   accent: '#22D3A7',
+  mascot: 'dragon',
   waterReminders: false,
   mealReminders: false,
   eveningReminder: false,
@@ -91,6 +93,7 @@ export async function getGoals(): Promise<Goals> {
     theme: row.theme,
     language: row.language === 'ar' ? 'ar' : 'en',
     accent: row.accent,
+    mascot: row.mascot ?? 'dragon',
     waterReminders: row.water_reminders === 1,
     mealReminders: row.meal_reminders === 1,
     eveningReminder: row.evening_reminder === 1,
@@ -116,9 +119,9 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     `INSERT INTO settings
        (id, calorie_goal, protein_goal, carb_goal, fat_goal, water_goal,
         glass_ml, weight_unit, sex, age, height_cm, activity, goal_weight_kg,
-        caffeine_limit, resting_burn, theme, language, accent, water_reminders,
-        meal_reminders, evening_reminder, weekday_goals, onboarded)
-     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        caffeine_limit, resting_burn, theme, language, accent, mascot,
+        water_reminders, meal_reminders, evening_reminder, weekday_goals, onboarded)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
      ON CONFLICT(id) DO UPDATE SET
        calorie_goal = excluded.calorie_goal,
        protein_goal = excluded.protein_goal,
@@ -137,6 +140,7 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
        theme = excluded.theme,
        language = excluded.language,
        accent = excluded.accent,
+       mascot = excluded.mascot,
        water_reminders = excluded.water_reminders,
        meal_reminders = excluded.meal_reminders,
        evening_reminder = excluded.evening_reminder,
@@ -159,6 +163,7 @@ export async function saveGoals(update: GoalUpdate): Promise<void> {
     next.theme,
     next.language,
     next.accent,
+    next.mascot,
     next.waterReminders ? 1 : 0,
     next.mealReminders ? 1 : 0,
     next.eveningReminder ? 1 : 0,

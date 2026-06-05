@@ -10,6 +10,32 @@ export function effectiveCalorieGoal(goals: Goals, dayKey: string): number {
   return override != null && override > 0 ? override : goals.calorieGoal;
 }
 
+/** Calories and macro grams still unspent against a day's targets. */
+export interface RemainingMacros {
+  calLeft: number;
+  proteinLeft: number;
+  carbLeft: number;
+  fatLeft: number;
+}
+
+/**
+ * How much of each daily target is still unspent on a given day: the day's
+ * calorie goal (honoring weekday overrides) and the macro goals minus what's
+ * already logged. Values go negative once a target is exceeded.
+ */
+export function getRemainingMacros(
+  day: string,
+  goals: Goals,
+  summary: { calories: number; protein: number; carbs: number; fat: number },
+): RemainingMacros {
+  return {
+    calLeft: effectiveCalorieGoal(goals, day) - summary.calories,
+    proteinLeft: goals.proteinGoal - summary.protein,
+    carbLeft: goals.carbGoal - summary.carbs,
+    fatLeft: goals.fatGoal - summary.fat,
+  };
+}
+
 const LB_PER_KG = 2.2046226218;
 
 export function kgToLb(kg: number): number {

@@ -36,6 +36,7 @@ const FALLBACK: Goals = {
   theme: 'dark',
   language: 'en',
   accent: '#22D3A7',
+  mascot: 'dragon',
   waterReminders: false,
   mealReminders: false,
   eveningReminder: false,

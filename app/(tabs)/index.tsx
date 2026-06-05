@@ -35,13 +35,15 @@ import {
 } from '@/db/dates';
 import { useGoals } from '@/state/GoalsContext';
 import { useT } from '@/i18n';
-import { effectiveCalorieGoal, effectiveRestingBurn } from '@/health';
+import { effectiveCalorieGoal, effectiveRestingBurn, getRemainingMacros } from '@/health';
 import { updateWidgetSnapshot } from '@/widgets';
 import { ProgressRing } from '@/components/ProgressRing';
 import { MacroBars } from '@/components/MacroBars';
 import { WaterCard } from '@/components/WaterCard';
 import { CaffeineCard } from '@/components/CaffeineCard';
 import { Celebration } from '@/components/Celebration';
+import { CompanionMascot } from '@/components/companion/CompanionMascot';
+import { deriveMood } from '@/components/companion/mood';
 import { maybeAskForReview } from '@/reviews';
 import { Card, EmptyState, GlassCard } from '@/components/ui';
 import { successFeedback, tapFeedback } from '@/haptics';
@@ -197,10 +199,22 @@ export default function TodayScreen() {
   );
 
   const dayCalorieGoal = effectiveCalorieGoal(goals, day);
-  const calLeft = dayCalorieGoal - summary.calories;
-  const proteinLeft = goals.proteinGoal - summary.protein;
+  const { calLeft, proteinLeft } = getRemainingMacros(day, goals, summary);
   const restingBurn = effectiveRestingBurn(goals, weightKg);
+  const goalHit =
+    isToday(day) && dayCalorieGoal > 0 && summary.count > 0 && summary.calories >= dayCalorieGoal;
   const showSuggestion = isToday(day) && summary.count > 0 && (calLeft > 50 || proteinLeft > 5);
+  const companionMood = deriveMood({
+    isToday: isToday(day),
+    streak,
+    goalHit,
+    mealsLogged: summary.count,
+    calLeft,
+    proteinLeft,
+    waterRatio: water / Math.max(1, goals.waterGoal),
+    checkinMood: checkin?.mood ?? null,
+    hourOfDay: new Date().getHours(),
+  });
 
   const knownKeys = new Set(categories.map((c) => c.key));
   const sections: Section[] = categories.map((cat) => {
@@ -266,18 +280,10 @@ export default function TodayScreen() {
               />
             </View>
 
-            {streak > 1 ? (
-              <View style={styles.insight}>
-                <Ionicons name="flame" size={16} color={colors.warning} />
-                <Text style={styles.insightText}>
-                  {t('today.streak', { n: streak })}
-                </Text>
-              </View>
-            ) : null}
-
             <QuickActions
               onQuick={() => router.push(`/add-meal?day=${day}&quick=1`)}
               onExercise={() => router.push(`/add-exercise?day=${day}`)}
+              onRoulette={() => router.push(`/roulette?day=${day}`)}
               onCopy={onCopyYesterday}
             />
 
@@ -383,6 +389,14 @@ export default function TodayScreen() {
       </Pressable>
 
       <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
+
+      <CompanionMascot
+        character={goals.mascot}
+        mood={companionMood}
+        streak={streak}
+        goalHit={goalHit}
+        onPress={() => router.push('/checkin')}
+      />
     </View>
   );
 }
@@ -559,10 +573,12 @@ function BalanceCell({ label, value, color }: { label: string; value: number; co
 function QuickActions({
   onQuick,
   onExercise,
+  onRoulette,
   onCopy,
 }: {
   onQuick: () => void;
   onExercise: () => void;
+  onRoulette: () => void;
   onCopy: () => void;
 }) {
   const { t } = useT();
@@ -570,6 +586,7 @@ function QuickActions({
     <View style={styles.quickActions}>
       <QuickAction icon="flash-outline" label={t('today.quickKcal')} onPress={onQuick} />
       <QuickAction icon="barbell-outline" label={t('today.exercise')} onPress={onExercise} />
+      <QuickAction icon="dice-outline" label={t('today.roulette')} onPress={onRoulette} />
       <QuickAction icon="copy-outline" label={t('today.copyDay')} onPress={onCopy} />
     </View>
   );
@@ -710,19 +727,6 @@ const styles = StyleSheet.create({
   netText: { fontSize: font.size.md, fontWeight: font.weight.bold },
   balanceMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   balanceMeta: { color: colors.textMuted, fontSize: font.size.xs, flexShrink: 1 },
-  insight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  insightText: { color: colors.text, fontSize: font.size.sm, fontWeight: font.weight.medium },
   cardGap: { marginTop: spacing.md },
   suggestCard: {
     flexDirection: 'row',
@@ -752,7 +756,6 @@ const styles = StyleSheet.create({
   quickActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, marginBottom: spacing.md },
   quickAction: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
@@ -762,7 +765,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     paddingVertical: spacing.md,
   },
-  quickActionLabel: { color: colors.text, fontSize: font.size.sm, fontWeight: font.weight.medium },
+  quickActionLabel: {
+    color: colors.text,
+    fontSize: font.size.xs,
+    fontWeight: font.weight.medium,
+    textAlign: 'center',
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',

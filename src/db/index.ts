@@ -221,6 +221,10 @@ const MIGRATIONS: string[] = [
     ALTER TABLE settings ADD COLUMN evening_reminder INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE settings ADD COLUMN review_prompted INTEGER NOT NULL DEFAULT 0;
   `,
+  // 11 -> 12: home-screen companion mascot character selection.
+  `
+    ALTER TABLE settings ADD COLUMN mascot TEXT NOT NULL DEFAULT 'dragon';
+  `,
 ];
 
 /**

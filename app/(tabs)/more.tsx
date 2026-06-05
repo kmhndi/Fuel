@@ -24,6 +24,7 @@ export default function MoreScreen() {
     { icon: 'fast-food-outline', title: t('title.foodLibrary'), subtitle: t('more.subFood'), href: '/food-library' },
     { icon: 'calendar-outline', title: t('title.calendar'), subtitle: t('more.subCalendar'), href: '/calendar' },
     { icon: 'trophy-outline', title: t('title.achievements'), subtitle: t('more.subAch'), href: '/achievements' },
+    { icon: 'sparkles-outline', title: t('more.wrapped'), subtitle: t('more.subWrapped'), href: '/wrapped' },
     { icon: 'share-social-outline', title: t('more.shareToday'), subtitle: t('more.subShare'), href: '/share-day' },
     { icon: 'flash-outline', title: t('title.presets'), subtitle: t('more.subPresets'), href: '/presets' },
     { icon: 'pricetags-outline', title: t('title.categories'), subtitle: t('more.subCategories'), href: '/categories' },
