@@ -2,7 +2,7 @@
   "expo": {
     "name": "Fuel",
     "slug": "fuel",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "scheme": "fuel",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.khalidalmohannadi.fuel",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
